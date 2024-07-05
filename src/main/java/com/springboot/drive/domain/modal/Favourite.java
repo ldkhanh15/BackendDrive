@@ -1,5 +1,6 @@
 package com.springboot.drive.domain.modal;
 
+import com.springboot.drive.ulti.SecurityUtil;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,4 +33,16 @@ public class Favourite {
     private Instant updatedAt;
     private String updatedBy;
     private String createdBy;
+    @PrePersist
+    public void handleBeforeCreate(){
+        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get():"";
+        this.createdAt=Instant.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate(){
+        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get()
+                :"";
+        this.updatedAt=Instant.now();
+    }
 }

@@ -2,6 +2,7 @@ package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Activity;
+import com.springboot.drive.domain.modal.Favourite;
 import com.springboot.drive.repository.ActivityRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,8 +19,10 @@ public class ActivityService {
         this.activityRepository=activityRepository;
     }
 
-    public ResultPaginationDTO getAll(Specification<Activity> specification, Pageable pageable){
-        Page<Activity> activities=activityRepository.findAll(specification, pageable);
+    public ResultPaginationDTO getAll(Long itemId,Specification<Activity> specification, Pageable pageable){
+        Specification<Activity> itemSpec = Specification.where(specification)
+                .and((root, query, builder) -> builder.equal(root.get("item_id"), itemId));
+        Page<Activity> activities=activityRepository.findAll(itemSpec, pageable);
         ResultPaginationDTO res=new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber() + 1);

@@ -2,7 +2,9 @@ package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Favourite;
+import com.springboot.drive.domain.modal.Item;
 import com.springboot.drive.domain.modal.Permission;
+import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.FavouriteRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,8 +17,13 @@ import java.util.Optional;
 public class FavouriteService {
 
     private FavouriteRepository favouriteRepository;
-    public FavouriteService(FavouriteRepository favouriteRepository) {
+
+
+    public FavouriteService(
+            FavouriteRepository favouriteRepository
+    ) {
         this.favouriteRepository=favouriteRepository;
+ ;
     }
 
     public ResultPaginationDTO getAll(Specification<Favourite> specification, Pageable pageable){
@@ -33,7 +40,22 @@ public class FavouriteService {
         resultPaginationDTO.setResult(favourites);
         return resultPaginationDTO;
     }
+    public ResultPaginationDTO getAllOfUser(Long userId,Specification<Favourite> specification, Pageable pageable){
+        Specification<Favourite> userSpec = Specification.where(specification)
+                .and((root, query, builder) -> builder.equal(root.get("userId"), userId));
+        Page<Favourite> favourites=favouriteRepository.findAll(userSpec,pageable);
+        ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber()+1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(favourites.getTotalPages());
+        meta.setTotal(favourites.getTotalElements());
 
+
+        resultPaginationDTO.setMeta(meta);
+        resultPaginationDTO.setResult(favourites);
+        return resultPaginationDTO;
+    }
     public Favourite findById(Long id){
         Optional<Favourite> optionalFavourite=favouriteRepository.findById(id);
         if(optionalFavourite.isPresent()){
@@ -48,5 +70,9 @@ public class FavouriteService {
 
     public void delete(Favourite favourite){
         favouriteRepository.delete(favourite);
+    }
+
+    public Favourite findByUserAndItem(User user, Item item) {
+        return favouriteRepository.findByUserAndItem(user, item);
     }
 }

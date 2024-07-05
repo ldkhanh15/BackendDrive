@@ -12,7 +12,7 @@ public interface FileRepository extends JpaRepository<File,Long>, JpaSpecificati
 
     List<File> findByParentIsNull();
     List<File> findByParent(Folder parent);
-
+    List<File> findByParentAndIsEnabled(Folder parent, boolean enabled);
     File findByItemIdAndParent(Long id, Folder folder);
 
 }

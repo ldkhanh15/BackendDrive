@@ -23,8 +23,8 @@ public class FileService {
         this.fileRepository = fileRepository;
     }
 
-    public ResultPaginationDTO getAll(Folder folder) {
-        List<File> files=fileRepository.findByParent(folder);
+    public ResultPaginationDTO getAll(Folder folder,boolean enabled) {
+        List<File> files=fileRepository.findByParentAndIsEnabled(folder,enabled);
         List<ResFileDTO> res=files.stream().map(
                 ResFileDTO::new
         ).toList();
@@ -45,11 +45,17 @@ public class FileService {
         return null;
     }
 
-    public void delete(File file){
+    public File softDelete(File file){
         file.setIsEnabled(false);
-        fileRepository.save(file);
+        return fileRepository.save(file);
     }
-    
+    public void delete(File file){
+        fileRepository.delete(file);
+    }
+    public File restore(File file){
+        file.setIsEnabled(true);
+        return fileRepository.save(file);
+    }
     public File findByName(String name){
         return fileRepository.findByFileName(name);
     }
@@ -57,4 +63,5 @@ public class FileService {
     public File findByIdAndParent(Long id, Folder folder) {
         return fileRepository.findByItemIdAndParent(id, folder);
     }
+
 }

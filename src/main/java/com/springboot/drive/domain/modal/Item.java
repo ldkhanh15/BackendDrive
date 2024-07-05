@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -38,6 +39,9 @@ public abstract class Item {
     @JoinColumn(name = "owner_id")
     @JsonIgnoreProperties(value ={ "favourites","accessItems","items"})
     private User user;
+
+    @OneToMany(mappedBy = "item")
+    public List<Activity> activity;
 
     @PrePersist
     public void handleBeforeCreate(){

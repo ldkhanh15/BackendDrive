@@ -2,6 +2,8 @@ package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.AccessItem;
+import com.springboot.drive.domain.modal.Item;
+import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.AccessRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +43,15 @@ public class AccessService {
             return accessFile.get();
         }
         return null;
+    }
+    public AccessItem findByItemAndUser(Item item,User user){
+        return accessRepository.findByItemAndUser(item,user);
+    }
+    public void delete(Item item, User user){
+        accessRepository.deleteByItemAndUser(item,user);
+    }
+    public void delete(AccessItem item){
+        accessRepository.delete(item);
     }
 
 }
