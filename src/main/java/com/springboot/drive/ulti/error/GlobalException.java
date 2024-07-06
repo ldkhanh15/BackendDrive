@@ -21,8 +21,9 @@ public class GlobalException {
             UsernameNotFoundException.class,
             BadCredentialsException.class,
             InValidException.class,
+            InValidAccessEnumTypeException.class
     })
-    public ResponseEntity<RestResponse<Object>> handleStudentException(Exception exception) {
+    public ResponseEntity<RestResponse<Object>> handleException(Exception exception) {
         RestResponse<Object> res = new RestResponse<>();
 
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
@@ -40,7 +41,7 @@ public class GlobalException {
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
         res.setError(ex.getBody().getDetail());
 
-        List<String> errors = fieldErrors.stream().map(f -> f.getDefaultMessage()).collect(Collectors.toList());
+        List<String> errors = fieldErrors.stream().map(f -> "Field '" + f.getField() + "' " + f.getDefaultMessage()).collect(Collectors.toList());
 
         res.setMessage(errors.size() > 1 ? errors : errors.get(0));
 

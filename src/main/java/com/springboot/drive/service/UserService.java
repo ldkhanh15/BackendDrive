@@ -10,11 +10,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public UserService(UserRepository userRepository){
         this.userRepository = userRepository;
@@ -48,11 +47,7 @@ public class UserService {
         userRepository.save(user);
     }
     public User findById(long id){
-        Optional<User> userOptional=userRepository.findById(id);
-        if(userOptional.isPresent()){
-            return userOptional.get();
-        }
-        return null;
+        return userRepository.findById(id).orElse(null);
     }
 
     public User findByEmail(String email){

@@ -2,7 +2,6 @@ package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Permission;
-import com.springboot.drive.domain.modal.Role;
 import com.springboot.drive.repository.PermissionRepository;
 import com.springboot.drive.repository.RoleRepository;
 import org.springframework.data.domain.Page;
@@ -10,12 +9,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 @Service
 public class PermissionService {
-    private PermissionRepository permissionRepository;
-    private RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
+    private final RoleRepository roleRepository;
     public PermissionService(PermissionRepository permissionRepository,RoleRepository roleRepository) {
         this.permissionRepository = permissionRepository;
         this.roleRepository = roleRepository;
@@ -36,11 +34,7 @@ public class PermissionService {
     }
 
     public Permission getById(Long id){
-        Optional<Permission> permissionOption=permissionRepository.findById(id);
-        if(permissionOption.isPresent()){
-            return permissionOption.get();
-        }
-        return null;
+        return permissionRepository.findById(id).orElse(null);
     }
     public Permission save(Permission permission){
         return permissionRepository.save(permission);
@@ -57,9 +51,7 @@ public class PermissionService {
     public boolean isSameName(Permission p){
         Permission pDB=getById(p.getId());
         if(pDB!=null){
-            if(p.getName().toLowerCase().equals(pDB.getName().toLowerCase())){
-                return true;
-            }
+            return p.getName().equalsIgnoreCase(pDB.getName());
         }
         return false;
     }

@@ -6,7 +6,6 @@ import com.springboot.drive.ulti.constant.ItemTypeEnum;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.accessibility.Accessible;
 
 @Getter
 @Setter

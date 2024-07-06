@@ -1,7 +1,6 @@
 package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
-import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.domain.modal.Permission;
 import com.springboot.drive.domain.modal.Role;
 import com.springboot.drive.repository.PermissionRepository;
@@ -12,15 +11,14 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 
 public class RoleService {
 
-    private RoleRepository roleRepository;
-    private PermissionRepository permissionRepository;
+    private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
 
     public RoleService(RoleRepository roleRepository, PermissionRepository permissionRepository
     ) {
@@ -47,11 +45,7 @@ public class RoleService {
     }
 
     public Role findById(Long id) {
-        Optional<Role> role = roleRepository.findById(id);
-        if (role.isPresent()) {
-            return role.get();
-        }
-        return null;
+        return roleRepository.findById(id).orElse(null);
     }
 
     public Role save(Role role) {
@@ -61,7 +55,6 @@ public class RoleService {
             List<Permission> permissions = permissionRepository.findByIdIn(reqPermissions);
             role.setPermissions(permissions);
         }
-        System.out.println(role.getPermissions().size());
         return roleRepository.save(role);
     }
 

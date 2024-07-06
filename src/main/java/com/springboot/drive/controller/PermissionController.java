@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/permissions")
 public class PermissionController {
 
-    private PermissionService permissionService;
+    private final PermissionService permissionService;
     public PermissionController(PermissionService permissionService){
         this.permissionService = permissionService;
     }

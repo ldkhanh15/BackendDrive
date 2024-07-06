@@ -1,5 +1,6 @@
 package com.springboot.drive.controller;
 
+import com.springboot.drive.domain.dto.request.ReqAccessDTO;
 import com.springboot.drive.domain.dto.response.ResAccessDTO;
 import com.springboot.drive.domain.modal.AccessItem;
 import com.springboot.drive.domain.modal.Item;
@@ -16,9 +17,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/access-items")
 public class AccessController {
 
-    private AccessService accessService;
-    private UserService userService;
-    private ItemService itemService;
+    private final AccessService accessService;
+    private final UserService userService;
+    private final ItemService itemService;
     public AccessController(AccessService accessService,UserService userService,ItemService itemService) {
         this.accessService = accessService;
         this.userService = userService;
@@ -28,7 +29,7 @@ public class AccessController {
     @PostMapping
     @ApiMessage(value = "create access item")
     public ResponseEntity<ResAccessDTO> createAccess(
-        @RequestBody ResAccessDTO accessDTO
+        @RequestBody ReqAccessDTO accessDTO
     ) throws InValidException {
         User user = userService.findByEmail(accessDTO.getUser().getEmail());
         if (user == null){
@@ -65,4 +66,30 @@ public class AccessController {
         return ResponseEntity.ok(null);
     }
 
+    @DeleteMapping()
+    @ApiMessage(value = "Delete access item")
+    public ResponseEntity<Void> deleteAccessById(
+            @RequestBody ReqAccessDTO accessDTO
+    ) throws InValidException {
+        User user=userService.findByEmail(accessDTO.getUser().getEmail());
+        if (user==null){
+            throw new InValidException(
+                    "User with email " + accessDTO.getUser().getEmail()+" does not exist"
+            );
+        }
+        Item  item=itemService.findById(accessDTO.getItem().getId());
+        if (item==null){
+            throw new InValidException(
+                    "Item with id " + accessDTO.getItem().getId()+" does not exist"
+            );
+        }
+        AccessItem accessItem =accessService.findByItemAndUser(item,user);
+        if(accessItem==null){
+            throw new InValidException(
+                    "Access with email " + user.getEmail()+ " to item "+item.getItemType()+" does not exist"
+            );
+        }
+        accessService.delete(accessItem);
+        return ResponseEntity.ok(null);
+    }
 }

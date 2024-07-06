@@ -24,13 +24,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-    private AuthenticationManagerBuilder authenticationManagerBuilder;
-    private PasswordEncoder passwordEncoder;
-    private UserService userService;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+    private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
     @Value("${jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
-    private SecurityUtil securityUtil;
+    private final SecurityUtil securityUtil;
 
     public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
                           UserService userService, PasswordEncoder passwordEncoder

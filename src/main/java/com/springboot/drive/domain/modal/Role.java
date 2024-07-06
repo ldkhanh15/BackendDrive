@@ -3,6 +3,9 @@ package com.springboot.drive.domain.modal;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.springboot.drive.ulti.SecurityUtil;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jdk.jfr.BooleanFlag;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,10 +25,14 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @NotBlank
     private String name;
 
+    @NotBlank
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
+
+    @NotNull
     private boolean active;
 
 
@@ -48,13 +55,13 @@ public class Role {
     private String createdBy;
     @PrePersist
     public void handleBeforeCreate(){
-        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get():"";
+        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get():"";
         this.createdAt=Instant.now();
     }
 
     @PreUpdate
     public void handleBeforeUpdate(){
-        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get()
+        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get()
                 :"";
         this.updatedAt=Instant.now();
     }

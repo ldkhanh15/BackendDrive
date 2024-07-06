@@ -10,12 +10,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 @Service
 public class AccessService {
 
-    private AccessRepository accessRepository;
+    private final AccessRepository accessRepository;
     public AccessService(AccessRepository accessRepository){
         this.accessRepository = accessRepository;
     }
@@ -38,11 +37,7 @@ public class AccessService {
     }
 
     public AccessItem findById(Long id){
-        Optional<AccessItem> accessFile = accessRepository.findById(id);
-        if(accessFile.isPresent()){
-            return accessFile.get();
-        }
-        return null;
+        return accessRepository.findById(id).orElse(null);
     }
     public AccessItem findByItemAndUser(Item item,User user){
         return accessRepository.findByItemAndUser(item,user);
