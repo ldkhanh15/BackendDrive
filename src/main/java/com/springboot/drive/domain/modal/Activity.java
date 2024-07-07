@@ -30,6 +30,7 @@ public class Activity {
 
     @ManyToOne
     @JoinColumn(name = "item_id")
+    @JsonIgnoreProperties(value = {"activity","favourites","subFolders","files","user","parent"})
     private Item item;
 
     private Instant createdAt;
@@ -39,21 +40,21 @@ public class Activity {
 
     @ManyToOne
     @JoinColumn(name = "parent_id")
-    @JsonIgnoreProperties(value = {"subActivity"})
+    @JsonIgnoreProperties(value = {"subActivity","activity"})
     private Activity parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties(value = {"parent","subActivity"})
+    @JsonIgnoreProperties(value = {"parent","activity"})
     private List<Activity> subActivity;
     @PrePersist
     public void handleBeforeCreate(){
-        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get():"";
+        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get():"";
         this.createdAt=Instant.now();
     }
 
     @PreUpdate
     public void handleBeforeUpdate(){
-        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get()
+        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get()
                 :"";
         this.updatedAt=Instant.now();
     }

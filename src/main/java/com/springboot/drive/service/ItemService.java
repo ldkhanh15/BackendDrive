@@ -4,7 +4,6 @@ import com.springboot.drive.domain.modal.Item;
 import com.springboot.drive.repository.ItemRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 @Service
 public class ItemService {

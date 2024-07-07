@@ -1,6 +1,5 @@
 package com.springboot.drive.domain.modal;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
@@ -9,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -34,24 +32,27 @@ public abstract class Item {
     private String updatedBy;
     private Boolean isPublic;
     private Boolean isEnabled;
-
+    private Boolean isDeleted;
     @ManyToOne
     @JoinColumn(name = "owner_id")
     @JsonIgnoreProperties(value ={ "favourites","accessItems","items"})
     private User user;
 
-    @OneToMany(mappedBy = "item")
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<Activity> activity;
 
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties(value = {"items"})
+    private List<Favourite> favourites;
     @PrePersist
     public void handleBeforeCreate(){
-        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get():"";
+        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get():"";
         this.createdAt=Instant.now();
     }
 
     @PreUpdate
     public void handleBeforeUpdate(){
-        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()==true? SecurityUtil.getCurrentUserLogin().get()
+        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get()
                 :"";
         this.updatedAt=Instant.now();
     }

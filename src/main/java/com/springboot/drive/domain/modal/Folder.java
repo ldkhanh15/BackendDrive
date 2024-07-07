@@ -20,11 +20,11 @@ public class Folder extends Item {
     @JsonIgnoreProperties(value = {"subfolders","files"})
     private Folder parent;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties(value = {"parent","subfolders","files"})
     private List<Folder> subFolders;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties(value ={"parent"})
     private List<File> files;
 

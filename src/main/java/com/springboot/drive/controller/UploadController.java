@@ -28,7 +28,7 @@ public class UploadController {
 
     @Value("${upload-file.base-uri}")
     private String basePath;
-    private UploadService uploadService;
+    private final UploadService uploadService;
 
     public UploadController(UploadService uploadService) {
         this.uploadService = uploadService;
@@ -47,7 +47,7 @@ public class UploadController {
         }
         String fileName = file.getOriginalFilename();
         List<String> allowedExtensions = Arrays.asList("pdf", "jpg", "jpeg", "png", "doc", "docx");
-        boolean isValid = allowedExtensions.stream().anyMatch(item -> fileName.toLowerCase().endsWith(item));
+        boolean isValid = allowedExtensions.stream().anyMatch(item -> fileName != null && fileName.toLowerCase().endsWith(item));
         if (!isValid) {
             throw new StorageException(
                     "File " + fileName + " is not allowed"
@@ -93,7 +93,7 @@ public class UploadController {
     public ResponseEntity<List<ResUploadFileDTO>> upload(
             @RequestParam(value = "files", required = false) MultipartFile[] files,
             @RequestParam("folder") String folder
-    ) throws URISyntaxException, IOException, StorageException {
+    ) throws StorageException {
         if (files == null || files.length == 0) {
             throw new StorageException("No files selected. Please choose files and try again!");
         }
@@ -108,7 +108,7 @@ public class UploadController {
 
                         String fileName = file.getOriginalFilename();
                         boolean isValid = allowedExtensions.stream()
-                                .anyMatch(item -> fileName.toLowerCase().endsWith(item));
+                                .anyMatch(item -> fileName != null && fileName.toLowerCase().endsWith(item));
 
                         if (!isValid) {
                             throw new StorageException("File " + fileName + " is not allowed");

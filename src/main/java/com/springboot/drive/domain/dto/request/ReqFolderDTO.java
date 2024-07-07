@@ -6,11 +6,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ReqFolderDTO {
+    private long id;
     private String folderName;
-
     private FolderParent parent;
     private UserFolder user;
-    private boolean enabled;
+    private boolean isEnabled;
     private boolean isPublic;
     private String itemType;
     @Getter

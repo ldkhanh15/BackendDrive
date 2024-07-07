@@ -24,6 +24,7 @@ public class ResFolderDTO {
     private Boolean isPublic;
     private Boolean isEnabled;
     private String folderName;
+    private  Boolean isDeleted;
     List<FileFolder> files;
     List<SubFolder> subFolders;
     UserFolder user;
@@ -32,42 +33,46 @@ public class ResFolderDTO {
     }
     public ResFolderDTO(Folder folder) {
 
-        itemId = folder.getItemId();
-        itemType = folder.getItemType();
-        isEnabled = folder.getIsEnabled();
-        isPublic = folder.getIsPublic();
-        folderName = folder.getFolderName();
-        createdAt = folder.getCreatedAt();
-        createdBy = folder.getCreatedBy();
-        updatedAt = folder.getUpdatedAt();
-        updatedBy = folder.getUpdatedBy();
-        if (folder.getUser() != null) {
-            user=new UserFolder();
-            user.setId(folder.getUser().getId());
-            user.setName(folder.getUser().getName());
-            user.setEmail(folder.getUser().getEmail());
+        if(folder!=null){
+            itemId = folder.getItemId();
+            itemType = folder.getItemType();
+            isEnabled = folder.getIsEnabled();
+            isPublic = folder.getIsPublic();
+            folderName = folder.getFolderName();
+            createdAt = folder.getCreatedAt();
+            createdBy = folder.getCreatedBy();
+            updatedAt = folder.getUpdatedAt();
+            updatedBy = folder.getUpdatedBy();
+            isDeleted=folder.getIsDeleted();
+            if (folder.getUser() != null) {
+                user=new UserFolder();
+                user.setId(folder.getUser().getId());
+                user.setName(folder.getUser().getName());
+                user.setEmail(folder.getUser().getEmail());
+            }
+            if (folder.getFiles() != null && !folder.getFiles().isEmpty()) {
+                files = folder.getFiles().stream()
+                        .map(FileFolder::new)
+                        .collect(Collectors.toList());
+            }
+            if(folder.getSubFolders() != null && !folder.getSubFolders().isEmpty()) {
+                subFolders = folder.getSubFolders().stream()
+                        .map(SubFolder::new)
+                        .collect(Collectors.toList());
+            }
+            if(folder.getParent()!=null){
+                parent=new SubFolder();
+                parent.setItemId(folder.getParent().getItemId());
+                parent.setFolderName(folder.getParent().getFolderName());
+                parent.setIsPublic(folder.getParent().getIsPublic());
+                parent.setIsEnabled(folder.getParent().getIsEnabled());
+                parent.setCreatedAt(folder.getParent().getCreatedAt());
+                parent.setUpdatedAt(folder.getParent().getUpdatedAt());
+                parent.setUpdatedBy(folder.getParent().getUpdatedBy());
+                parent.setUpdatedAt(folder.getParent().getUpdatedAt());
+            }
         }
-        if (folder.getFiles() != null && !folder.getFiles().isEmpty()) {
-            files = folder.getFiles().stream()
-                    .map(FileFolder::new)
-                    .collect(Collectors.toList());
-        }
-        if(folder.getSubFolders() != null && !folder.getSubFolders().isEmpty()) {
-            subFolders = folder.getSubFolders().stream()
-                    .map(SubFolder::new)
-                    .collect(Collectors.toList());
-        }
-        if(folder.getParent()!=null){
-            parent=new SubFolder();
-            parent.setItemId(folder.getParent().getItemId());
-            parent.setFolderName(folder.getParent().getFolderName());
-            parent.setIsPublic(folder.getParent().getIsPublic());
-            parent.setIsEnabled(folder.getParent().getIsEnabled());
-            parent.setCreatedAt(folder.getParent().getCreatedAt());
-            parent.setUpdatedAt(folder.getParent().getUpdatedAt());
-            parent.setUpdatedBy(folder.getParent().getUpdatedBy());
-            parent.setUpdatedAt(folder.getParent().getUpdatedAt());
-        }
+
     }
 
     @Getter
@@ -86,6 +91,9 @@ public class ResFolderDTO {
         private Instant updatedAt;
         private String createdBy;
         private String updatedBy;
+        private  Boolean isPublic;
+        private Boolean isEnabled;
+        private  Boolean isDeleted;
         public FileFolder(File file){
             id=file.getItemId();
             fileType=file.getFileType();
@@ -98,6 +106,9 @@ public class ResFolderDTO {
             createdBy = file.getCreatedBy();
             updatedAt = file.getUpdatedAt();
             updatedBy = file.getUpdatedBy();
+            isEnabled=file.getIsEnabled();
+            isPublic=file.getIsPublic();
+            isDeleted=file.getIsDeleted();
         }
     }
 
@@ -114,6 +125,7 @@ public class ResFolderDTO {
         private Boolean isPublic;
         private Boolean isEnabled;
         private String folderName;
+        private  Boolean isDeleted;
         public SubFolder(Folder folder){
             itemId = folder.getItemId();
             isEnabled = folder.getIsEnabled();
@@ -123,6 +135,7 @@ public class ResFolderDTO {
             createdBy = folder.getCreatedBy();
             updatedAt = folder.getUpdatedAt();
             updatedBy = folder.getUpdatedBy();
+            isDeleted=folder.getIsDeleted();
         }
     }
 

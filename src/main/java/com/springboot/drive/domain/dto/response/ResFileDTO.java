@@ -24,6 +24,9 @@ public class ResFileDTO {
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
+    private Boolean isPublic;
+    private Boolean isEnabled;
+    private Boolean isDeleted;
     private UserFile user;
     private ParentFolder parent;
     public ResFileDTO(File file){
@@ -34,10 +37,14 @@ public class ResFileDTO {
         filePath=file.getFilePath();
         downloadCount=file.getDownloadCount();
         viewCount=file.getViewCount();
+        isEnabled=file.getIsEnabled();
+        isPublic= file.getIsPublic();
+        isDeleted=file.getIsDeleted();
         createdAt = file.getCreatedAt();
         createdBy = file.getCreatedBy();
         updatedAt = file.getUpdatedAt();
         updatedBy = file.getUpdatedBy();
+
         if(file.getUser()!=null){
             user=new UserFile();
             user.setId(file.getUser().getId());

@@ -5,19 +5,14 @@ import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.File;
 import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.repository.FileRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class FileService {
 
-    private FileRepository fileRepository;
+    private final FileRepository fileRepository;
 
     public FileService(FileRepository fileRepository) {
         this.fileRepository = fileRepository;
@@ -38,26 +33,22 @@ public class FileService {
         return fileRepository.save(file);
     }
     public File findById(Long id){
-        Optional<File> file=fileRepository.findById(id);
-        if(file.isPresent()){
-            return file.get();
-        }
-        return null;
+        return fileRepository.findById(id).orElse(null);
     }
-
+    public File findByIdAndEnabled(long id, boolean enabled){
+        return fileRepository.findByItemIdAndIsEnabled(id,enabled);
+    }
     public File softDelete(File file){
         file.setIsEnabled(false);
         return fileRepository.save(file);
     }
     public void delete(File file){
-        fileRepository.delete(file);
+        file.setIsDeleted(true);
+        fileRepository.save(file);
     }
     public File restore(File file){
         file.setIsEnabled(true);
         return fileRepository.save(file);
-    }
-    public File findByName(String name){
-        return fileRepository.findByFileName(name);
     }
 
     public File findByIdAndParent(Long id, Folder folder) {
