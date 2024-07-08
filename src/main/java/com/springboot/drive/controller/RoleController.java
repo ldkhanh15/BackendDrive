@@ -71,6 +71,7 @@ public class RoleController {
         roleDB.setName(role.getName());
         roleDB.setActive(role.isActive());
         roleDB.setDescription(role.getDescription());
+        roleDB.setPermissions(role.getPermissions());
 
         return ResponseEntity.ok(roleService.update(roleDB));
     }

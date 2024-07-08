@@ -1,5 +1,6 @@
 package com.springboot.drive.domain.modal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.springboot.drive.ulti.SecurityUtil;
 import jakarta.persistence.*;
@@ -41,11 +42,11 @@ public class Role {
     @JoinTable(name = "permision_role",
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
-
     )
     List<Permission> permissions;
 
     @OneToMany(mappedBy = "role")
+    @JsonIgnore
     private List<User> users;
 
 

@@ -21,7 +21,7 @@ public class UserDetailCustom implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         com.springboot.drive.domain.modal.User user = userService.findByEmail(username);
         if (user == null){
-            throw new UsernameNotFoundException("Email/password khong dung");
+            throw new UsernameNotFoundException("Email/password wrong");
         }
         return new User(
                 user.getEmail(),

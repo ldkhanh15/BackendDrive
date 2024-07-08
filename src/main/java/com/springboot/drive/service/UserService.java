@@ -1,7 +1,7 @@
 package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
-import com.springboot.drive.domain.dto.response.UserResDTO;
+import com.springboot.drive.domain.dto.response.ResUserDTO;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -28,8 +28,8 @@ public class UserService {
         meta.setPages(users.getTotalPages());
         meta.setTotal(users.getTotalElements());
 
-        List<UserResDTO> list = users.getContent().stream().map(
-                UserResDTO::new
+        List<ResUserDTO> list = users.getContent().stream().map(
+                ResUserDTO::new
         ).toList();
 
         resultPaginationDTO.setMeta(meta);

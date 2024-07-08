@@ -1,7 +1,7 @@
 package com.springboot.drive.controller;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
-import com.springboot.drive.domain.dto.response.UserResDTO;
+import com.springboot.drive.domain.dto.response.ResUserDTO;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.service.UserService;
 import com.springboot.drive.ulti.anotation.ApiMessage;
@@ -36,7 +36,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     @ApiMessage(value = "Get a new user")
-    public ResponseEntity<UserResDTO> getDetailUser(
+    public ResponseEntity<ResUserDTO> getDetailUser(
             @PathVariable("id") Long id
     ) throws InValidException {
         User userDB = userService.findById(id);
@@ -45,13 +45,13 @@ public class UserController {
                     "User with id " + id + " does not exist"
             );
         }
-        UserResDTO userResDTO = new UserResDTO(userDB);
-        return ResponseEntity.ok(userResDTO);
+        ResUserDTO resUserDTO = new ResUserDTO(userDB);
+        return ResponseEntity.ok(resUserDTO);
     }
 
     @PostMapping
     @ApiMessage(value = "Create a new user")
-    public ResponseEntity<UserResDTO> createUser(
+    public ResponseEntity<ResUserDTO> createUser(
             @Valid @RequestBody User user
     ) throws InValidException {
         User userDB = userService.findByEmail(user.getEmail());
@@ -63,13 +63,13 @@ public class UserController {
         String hashPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
         user.setEnabled(true);
-        UserResDTO userDTO = new UserResDTO(userService.save(user));
+        ResUserDTO userDTO = new ResUserDTO(userService.save(user));
         return ResponseEntity.ok(userDTO);
     }
 
     @PutMapping
     @ApiMessage(value = "Update a user")
-    public ResponseEntity<UserResDTO> update(
+    public ResponseEntity<ResUserDTO> update(
             @Valid @RequestBody User user
     ) throws InValidException {
         User userDB = userService.findById(user.getId());
@@ -81,9 +81,9 @@ public class UserController {
         userDB.setPassword(user.getPassword());
         userDB.setAvatar(user.getAvatar());
 
-        UserResDTO userResDTO = new UserResDTO(userService.save(userDB));
+        ResUserDTO resUserDTO = new ResUserDTO(userService.save(userDB));
 
-        return ResponseEntity.ok(userResDTO);
+        return ResponseEntity.ok(resUserDTO);
 
     }
 

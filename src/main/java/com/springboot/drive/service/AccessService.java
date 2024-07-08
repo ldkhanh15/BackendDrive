@@ -2,9 +2,11 @@ package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.AccessItem;
+import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.domain.modal.Item;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.AccessRepository;
+import com.springboot.drive.ulti.constant.AccessEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -49,4 +51,7 @@ public class AccessService {
         accessRepository.delete(item);
     }
 
+    public AccessItem findByItemAndUserAndAccessType(Item item, User user, AccessEnum action) {
+        return accessRepository.findByItemAndUserAndAccessType(item,user,action);
+    }
 }

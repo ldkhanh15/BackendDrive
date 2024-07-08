@@ -2,7 +2,7 @@ package com.springboot.drive.controller;
 
 import com.springboot.drive.domain.dto.request.ReqLoginDTO;
 import com.springboot.drive.domain.dto.response.ResLoginDTO;
-import com.springboot.drive.domain.dto.response.UserResDTO;
+import com.springboot.drive.domain.dto.response.ResUserDTO;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.service.UserService;
 import com.springboot.drive.ulti.SecurityUtil;
@@ -44,31 +44,20 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO loginDTO) {
         UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword());
+                new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
-
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        ResLoginDTO res = new ResLoginDTO();
-        User currentUserDB = userService.findByEmail(loginDTO.getUsername());
-        if (currentUserDB != null) {
-            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
-                    currentUserDB.getId(),
-                    currentUserDB.getEmail(),
-                    currentUserDB.getName(),
-                    currentUserDB.getRole()
-            );
-
-            res.setUser(userLogin);
-        }
+        User currentUserDB = userService.findByEmail(loginDTO.getEmail());
+        ResLoginDTO res = new ResLoginDTO(currentUserDB);
 
         String token = securityUtil.accessToken(authentication.getName(), res);
 
         res.setAccessToken(token);
         //create refresh token
-        String refreshToken = securityUtil.refreshToken(loginDTO.getUsername(), res);
+        String refreshToken = securityUtil.refreshToken(loginDTO.getEmail(), res);
         //update token
-        userService.updateUserToken(refreshToken, loginDTO.getUsername());
+        userService.updateUserToken(refreshToken, loginDTO.getEmail());
 
 
         //set cookie
@@ -91,57 +80,34 @@ public class AuthController {
     @ApiMessage(value = "Get account")
     public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
-
-        ResLoginDTO res = new ResLoginDTO();
         User currentUserDB = userService.findByEmail(email);
-        ResLoginDTO.UserGetAccount userGetAccount=new ResLoginDTO.UserGetAccount();
-        if (currentUserDB != null) {
-            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
-                    currentUserDB.getId(),
-                    currentUserDB.getEmail(),
-                    currentUserDB.getName(),
-                    currentUserDB.getRole()
-            );
-
-            userGetAccount.setUser(userLogin);
-        }
+        ResLoginDTO.UserGetAccount userGetAccount = new ResLoginDTO.UserGetAccount(currentUserDB);
         return ResponseEntity.ok().body(userGetAccount);
     }
 
     @GetMapping("/refresh")
     @ApiMessage("Get refresh token")
     public ResponseEntity<ResLoginDTO> getRefreshToken(
-            @CookieValue (name = "refresh_token",defaultValue = "abc") String refresh_token
+            @CookieValue(name = "refresh_token", defaultValue = "abc") String refresh_token
     ) throws InValidException {
-        if(refresh_token.equals("abc")){
+        if (refresh_token.equals("abc")) {
             throw new InValidException("Refresh token is not exist in cookie");
         }
         //check valid token
-        Jwt jwt= securityUtil.checkValidToken(refresh_token);
-        String email=jwt.getSubject();
+        Jwt jwt = securityUtil.checkValidToken(refresh_token);
+        String email = jwt.getSubject();
 
-        User user=userService.findByEmailAndRefreshToken(email,refresh_token);
-        if(user==null){
+        User user = userService.findByEmailAndRefreshToken(email, refresh_token);
+        if (user == null) {
             throw new InValidException("Refresh token is invalid");
         }
 
-
-        ResLoginDTO res = new ResLoginDTO();
         User currentUserDB = userService.findByEmail(user.getEmail());
-        if (currentUserDB != null) {
-            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
-                    currentUserDB.getId(),
-                    currentUserDB.getEmail(),
-                    currentUserDB.getName(),
-                    currentUserDB.getRole()
-            );
+        ResLoginDTO res = new ResLoginDTO(currentUserDB);
 
-            res.setUser(userLogin);
-        }
         String token = securityUtil.accessToken(user.getEmail(), res);
 
         res.setAccessToken(token);
-
 
         //create refresh token
         String newRefreshToken = securityUtil.refreshToken(user.getEmail(), res);
@@ -168,37 +134,37 @@ public class AuthController {
     @PostMapping("/logout")
     @ApiMessage(value = "Logout user")
     public ResponseEntity<Void> logout() throws InValidException {
-        String email = SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
-        if(email.equals("")){
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        if (email.isEmpty()) {
             throw new InValidException("Access token is invalid");
         }
-        userService.updateUserToken(null,email);
+        userService.updateUserToken(null, email);
         ResponseCookie deleteSpringCookie = ResponseCookie
-                .from("refresh_token",null)
+                .from("refresh_token", null)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
                 .maxAge(0)
                 .build();
 
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,deleteSpringCookie.toString()).body(null);
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, deleteSpringCookie.toString()).body(null);
     }
 
     @PostMapping("/register")
     @ApiMessage(value = "Register an account")
-    public  ResponseEntity<UserResDTO> register(
+    public ResponseEntity<ResUserDTO> register(
             @Valid @RequestBody User user
     ) throws InValidException {
-        User userDB=userService.findByEmail(user.getEmail());
-        if(userDB!=null){
+        User userDB = userService.findByEmail(user.getEmail());
+        if (userDB != null) {
             throw new InValidException(
-                    "Email "+user.getEmail()+" already registered"
+                    "Email " + user.getEmail() + " already registered"
             );
         }
-        String hashPassword=passwordEncoder.encode(user.getPassword());
+        String hashPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
-        User us=userService.save(user);
-        UserResDTO dto=new UserResDTO(us);
+        User us = userService.save(user);
+        ResUserDTO dto = new ResUserDTO(us);
 
         return ResponseEntity.ok(dto);
 

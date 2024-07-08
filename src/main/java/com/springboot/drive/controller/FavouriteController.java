@@ -1,5 +1,7 @@
 package com.springboot.drive.controller;
 
+import com.springboot.drive.domain.dto.request.ReqFavouriteDTO;
+import com.springboot.drive.domain.dto.response.ResFavouriteDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Favourite;
 import com.springboot.drive.domain.modal.Item;
@@ -19,9 +21,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/favourites")
 public class FavouriteController {
-    private UserService userService;
-    private FavouriteService favouriteService;
-    private ItemService itemService;
+    private final UserService userService;
+    private final FavouriteService favouriteService;
+    private final ItemService itemService;
     public FavouriteController(
             UserService userService,
             FavouriteService favouriteService,
@@ -31,9 +33,9 @@ public class FavouriteController {
         this.favouriteService =favouriteService;
         this.itemService = itemService;
     }
-    @GetMapping("/{userId}")
+    @GetMapping("/{id}")
     public ResponseEntity<ResultPaginationDTO> getAllOfUser(
-            @PathVariable("userId")Long userId,
+            @PathVariable("id")Long userId,
             @Filter Specification<Favourite> specification,
             Pageable pageable
     ) throws InValidException {
@@ -46,12 +48,17 @@ public class FavouriteController {
         return ResponseEntity.ok(favouriteService.getAllOfUser(userId,specification,pageable));
     }
     @PostMapping()
-    public ResponseEntity<Favourite> create(
-            @Valid@RequestBody Favourite favourite
+    public ResponseEntity<ResFavouriteDTO> create(
+            @Valid@RequestBody ReqFavouriteDTO favourite
     ) throws InValidException {
         String email = SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get():"";
         User user=userService.findByEmail(email);
-        Item item=itemService.findById(favourite.getItem().getItemId());
+        Item item=itemService.findById(favourite.getItem().getId());
+        if(item==null){
+            throw new InValidException(
+                    "Item with id "+favourite.getItem().getId()+" does not exist"
+            );
+        }
         Favourite favouriteDB=favouriteService.findByUserAndItem(user,item);
 
         if(favouriteDB!=null){
@@ -59,8 +66,10 @@ public class FavouriteController {
                     "This item already exists in the favorites"
             );
         }
-
-        return ResponseEntity.ok(favouriteService.save(favourite));
+        Favourite f=new Favourite();
+        f.setItem(item);
+        f.setUser(user);
+        return ResponseEntity.ok(new ResFavouriteDTO(favouriteService.save(f)));
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

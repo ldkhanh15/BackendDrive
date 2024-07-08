@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserResDTO {
+public class ResUserDTO {
     private long id;
 
     private String email;
@@ -16,19 +16,20 @@ public class UserResDTO {
     private double storageQuota;
     private RoleUser role;
 
-    public UserResDTO(User user){
+    public ResUserDTO(User user){
         id=user.getId();
         email=user.getEmail();
         avatar=user.getAvatar();
         enabled=user.isEnabled();
         storageQuota=user.getStorageQuota();
         if(user.getRole()!=null){
+            role=new RoleUser();
             role.setId(user.getRole().getId());
             role.setName(user.getRole().getName());
         }
     }
 
-    public UserResDTO(){
+    public ResUserDTO(){
 
     }
     @Getter

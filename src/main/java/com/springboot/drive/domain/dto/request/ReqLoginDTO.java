@@ -8,12 +8,12 @@ import lombok.Setter;
 @Setter
 public class ReqLoginDTO {
     @NotBlank(message = "Email khong duoc de trong")
-    private String username;
+    private String email;
     @NotBlank(message = "Password khong duoc de trong")
     private String password;
 
-    public ReqLoginDTO(String username, String password) {
-        this.username = username;
+    public ReqLoginDTO(String email, String password) {
+        this.email = email;
         this.password = password;
     }
 
