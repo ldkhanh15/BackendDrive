@@ -2,17 +2,17 @@ package com.springboot.drive.controller;
 
 import com.springboot.drive.domain.dto.request.ReqFileDTO;
 import com.springboot.drive.domain.dto.response.ResFileDTO;
-import com.springboot.drive.domain.dto.response.ResUploadFileDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.*;
 import com.springboot.drive.service.*;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.anotation.ApiMessage;
+import com.springboot.drive.ulti.anotation.FileOwnerShip;
+import com.springboot.drive.ulti.anotation.FolderOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
 import com.springboot.drive.ulti.error.InValidException;
 import com.springboot.drive.ulti.error.StorageException;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -21,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -69,6 +68,7 @@ public class FileController {
     }
 
     @GetMapping
+    @FolderOwnerShip(action = AccessEnum.VIEW)
     public ResponseEntity<ResultPaginationDTO> getAllByFolderEnabled(
             @PathVariable("folderId") Long folderId
     ) throws InValidException {
@@ -96,6 +96,8 @@ public class FileController {
     }
 
     @GetMapping("/{id}")
+    @ApiMessage(value = "Get a file by id")
+    @FileOwnerShip(action = AccessEnum.VIEW)
     public ResponseEntity<ResFileDTO> getById(
             @PathVariable("folderId") Long folderId,
             @PathVariable("id") Long id
@@ -121,9 +123,10 @@ public class FileController {
 
     @PostMapping
     @ApiMessage(value = "Upload a file")
+    @FolderOwnerShip(action=AccessEnum.CREATE)
     public ResponseEntity<ResFileDTO> create(
-            @RequestParam(value = "file", required = false) MultipartFile file,
-            @PathVariable("folderId") Long folderId
+            @PathVariable("folderId") Long folderId,
+            @RequestParam(value = "file", required = false) MultipartFile file
     ) throws InValidException, StorageException, URISyntaxException, IOException {
         Folder folder = folderService.findById(folderId);
         if (folder == null) {
@@ -164,7 +167,6 @@ public class FileController {
 
         File fileSaved = fileService.save(fileDB);
 
-
         logActivity(fileSaved, AccessEnum.CREATE);
 
         ResFileDTO res = new ResFileDTO(fileSaved);
@@ -173,7 +175,9 @@ public class FileController {
 
     @PutMapping
     @ApiMessage(value = "Rename a file")
+    @FileOwnerShip(action = AccessEnum.UPDATE)
     public ResponseEntity<ResFileDTO> rename(
+            @PathVariable("id")Long folderId,
             @RequestBody ReqFileDTO file
     ) throws InValidException {
         File fileDB = fileService.findByIdAndEnabled(file.getId(), true);
@@ -192,8 +196,11 @@ public class FileController {
 
     @DeleteMapping("/{id}/soft-delete")
     @ApiMessage(value = "Soft delete a file")
+    @FolderOwnerShip(action=AccessEnum.SOFT_DELETE)
+    @FileOwnerShip(action=AccessEnum.SOFT_DELETE)
     public ResponseEntity<Void> softDelete(
-            @PathVariable Long id
+            @PathVariable("folderId")Long folderId,
+            @PathVariable("id") Long id
     ) throws InValidException {
         File fileDB = fileService.findByIdAndEnabled(id, true);
         if (fileDB == null) {
@@ -201,7 +208,6 @@ public class FileController {
                     "File with id " + id + " does not exist"
             );
         }
-
         fileService.softDelete(fileDB);
 
         logActivity(fileDB, AccessEnum.SOFT_DELETE);
@@ -210,7 +216,10 @@ public class FileController {
 
     @DeleteMapping("/{id}")
     @ApiMessage(value = "Delete a file")
+    @FolderOwnerShip(action=AccessEnum.DELETE)
+    @FileOwnerShip(action=AccessEnum.DELETE)
     public ResponseEntity<Void> delete(
+            @PathVariable("folderId")Long folderId,
             @PathVariable Long id
     ) throws InValidException, URISyntaxException {
         File fileDB = fileService.findByIdAndEnabled(id, false);
@@ -234,7 +243,10 @@ public class FileController {
 
     @GetMapping("/{id}/restore")
     @ApiMessage(value = "Restore a file")
+    @FolderOwnerShip(action=AccessEnum.UPDATE)
+    @FileOwnerShip(action=AccessEnum.UPDATE)
     public ResponseEntity<ResFileDTO> restore(
+            @PathVariable("folderId")Long folderId,
             @PathVariable("id") long id
     ) throws InValidException {
         File file = fileService.findByIdAndEnabled(id, false);

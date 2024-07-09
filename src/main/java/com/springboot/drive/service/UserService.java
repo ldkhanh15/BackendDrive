@@ -4,19 +4,29 @@ import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.dto.response.ResUserDTO;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.UserRepository;
+import com.springboot.drive.ulti.error.InValidException;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository){
+    private final PasswordEncoder passwordEncoder;
+    public UserService(UserRepository userRepository,PasswordEncoder passwordEncoder){
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public ResultPaginationDTO getAllUserPaging(Specification<User> specification, Pageable pageable){
@@ -64,5 +74,35 @@ public class UserService {
             currentUser.setRefreshToken(token);
             userRepository.save(currentUser);
         }
+    }
+
+    public List<User> parseUsersFromFile(MultipartFile file) throws IOException, InValidException {
+        List<User> users = new ArrayList<>();
+        try (InputStreamReader reader = new InputStreamReader(file.getInputStream());
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader())) {
+
+            for (CSVRecord csvRecord : csvParser) {
+                User userDB=userRepository.findByEmail(csvRecord.get("email"));
+                if (userDB != null) {
+                    continue;
+                }
+                User user = new User();
+                user.setName(csvRecord.get("name"));
+                user.setEmail(csvRecord.get("email"));
+                String hashPassword = csvRecord.get("password");
+                user.setPassword(passwordEncoder.encode(hashPassword));
+                user.setEnabled(true);
+
+
+                users.add(user);
+            }
+        } catch (Exception e) {
+            throw new InValidException("Error parsing file: " + e.getMessage());
+        }
+        return users;
+    }
+
+    public List<User> saveAll(List<User> users) {
+        return userRepository.saveAll(users);
     }
 }

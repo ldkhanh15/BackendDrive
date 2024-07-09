@@ -11,6 +11,7 @@ import com.springboot.drive.service.FolderService;
 import com.springboot.drive.service.UserService;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.anotation.ApiMessage;
+import com.springboot.drive.ulti.anotation.FolderOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
 import com.springboot.drive.ulti.error.InValidException;
@@ -83,6 +84,7 @@ public class FolderController {
 
     @GetMapping("/{id}")
     @ApiMessage(value = "Get a folder")
+
     public ResponseEntity<ResFolderDTO> getDetail(
             @PathVariable("id") Long id
     ) throws InValidException {
@@ -97,6 +99,7 @@ public class FolderController {
     }
 
     @PostMapping
+    @FolderOwnerShip(action = AccessEnum.CREATE)
     @ApiMessage(value = "Create a new folder")
     public ResponseEntity<ResFolderDTO> create(
             @Valid @RequestBody ReqFolderDTO folderDTO
@@ -139,6 +142,7 @@ public class FolderController {
 
     @PutMapping
     @ApiMessage(value = "Update a folder")
+    @FolderOwnerShip(action = AccessEnum.UPDATE)
     public ResponseEntity<ResFolderDTO> update(
             @Valid @RequestBody ReqFolderDTO folder
     ) throws InValidException {
@@ -164,6 +168,7 @@ public class FolderController {
 
     @DeleteMapping("/{id}/soft-delete")
     @ApiMessage(value = "Soft delete a folder")
+    @FolderOwnerShip(action = AccessEnum.SOFT_DELETE)
     public ResponseEntity<Void> deleteSoft(
             @PathVariable("id") Long id
     ) throws InValidException {
@@ -181,6 +186,7 @@ public class FolderController {
 
     @DeleteMapping("/{id}")
     @ApiMessage(value = "Delete a folder")
+    @FolderOwnerShip(action = AccessEnum.DELETE)
     public ResponseEntity<Void> delete(
             @PathVariable("id") Long id
     ) throws InValidException, URISyntaxException {
@@ -197,6 +203,7 @@ public class FolderController {
 
     @GetMapping("/{id}/restore")
     @ApiMessage(value = "Restore a folder")
+    @FolderOwnerShip(action = AccessEnum.DELETE)
     public ResponseEntity<ResFolderDTO> restore(
             @PathVariable("id") Long id
     ) throws InValidException {

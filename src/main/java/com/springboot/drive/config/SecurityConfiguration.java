@@ -6,6 +6,7 @@ import com.springboot.drive.ulti.SecurityUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -41,14 +42,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
         String[] whitelist = {
-                "/",
-                "/api/v1/auth/login",
-                "/storage/**",
-                "/api/v1/auth/refresh",
-                "/api/v1/auth/logout",
-                "/api/v1/auth/register" ,
-                "/api/v1/email"
-
+                "/api/v1/auth/**",
         };
 
         http
@@ -57,9 +51,6 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth ->
                         auth
                                 .requestMatchers(whitelist).permitAll()
-                                .requestMatchers(HttpMethod.GET,"/api/v1/companies/**").permitAll()
-                                .requestMatchers(HttpMethod.GET,"/api/v1/jobs/**").permitAll()
-                                .requestMatchers(HttpMethod.GET,"/api/v1/skills/**").permitAll()
                                 .anyRequest().authenticated()
 
                 )
@@ -70,10 +61,6 @@ public class SecurityConfiguration {
                         )
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
-//                .exceptionHandling(
-//                        exception -> exception.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
-//                                .accessDeniedHandler(new BearerTokenAccessDeniedHandler())
-//                )
                 .formLogin(f -> f.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

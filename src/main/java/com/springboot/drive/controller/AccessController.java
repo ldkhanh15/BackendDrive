@@ -83,7 +83,7 @@ public class AccessController {
                     "Item with id " + accessDTO.getItem().getId()+" does not exist"
             );
         }
-        AccessItem accessItem =accessService.findByItemAndUser(item,user);
+        AccessItem accessItem =accessService.findByItemAndUserAndAccessType(item,user,accessDTO.getAccessType());
         if(accessItem==null){
             throw new InValidException(
                     "Access with email " + user.getEmail()+ " to item "+item.getItemType()+" does not exist"

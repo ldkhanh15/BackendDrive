@@ -15,7 +15,7 @@ public class AccessEnumDeserializer extends JsonDeserializer<AccessEnum> {
     @SneakyThrows
     @Override
     public AccessEnum deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        String value = p.getText().toUpperCase(); // Chuyển đổi giá trị thành chữ hoa
+        String value = p.getText().toUpperCase();
         switch (value) {
             case "CREATE":
                 return AccessEnum.CREATE;

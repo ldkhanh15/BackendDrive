@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 
 @Service
 public class AccessService {
@@ -41,7 +43,7 @@ public class AccessService {
     public AccessItem findById(Long id){
         return accessRepository.findById(id).orElse(null);
     }
-    public AccessItem findByItemAndUser(Item item,User user){
+    public List<AccessItem> findByItemAndUser(Item item, User user){
         return accessRepository.findByItemAndUser(item,user);
     }
     public void delete(Item item, User user){
@@ -52,6 +54,6 @@ public class AccessService {
     }
 
     public AccessItem findByItemAndUserAndAccessType(Item item, User user, AccessEnum action) {
-        return accessRepository.findByItemAndUserAndAccessType(item,user,action);
+        return accessRepository.findByItemAndUserAndAccessTypeOrAccessTypeAll(item,user,action);
     }
 }

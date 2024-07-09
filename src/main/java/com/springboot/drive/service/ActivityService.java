@@ -15,16 +15,17 @@ import org.springframework.stereotype.Service;
 public class ActivityService {
 
     private final ActivityRepository activityRepository;
+
     public ActivityService(ActivityRepository activityRepository) {
-        this.activityRepository=activityRepository;
+        this.activityRepository = activityRepository;
     }
 
-    public ResultPaginationDTO getAll(Long itemId,Specification<Activity> specification, Pageable pageable){
+    public ResultPaginationDTO getAll(Long itemId, Specification<Activity> specification, Pageable pageable) {
         Specification<Activity> itemSpec = Specification.where(specification)
                 .and((root, query, builder) -> builder.equal(root.get("item").get("id"), itemId));
-        Page<Activity> activities=activityRepository.findAll(itemSpec, pageable);
-        ResultPaginationDTO res=new ResultPaginationDTO();
-        ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
+        Page<Activity> activities = activityRepository.findAll(itemSpec, pageable);
+        ResultPaginationDTO res = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber() + 1);
         meta.setPageSize(pageable.getPageSize());
         meta.setPages(activities.getTotalPages());
@@ -34,14 +35,16 @@ public class ActivityService {
         res.setResult(activities.getContent());
         return res;
     }
-    public Activity save(Activity activity){
+
+    public Activity save(Activity activity) {
         return activityRepository.save(activity);
     }
 
-    public Activity findById(Long id){
-        return  activityRepository.findById(id).orElse(null);
+    public Activity findById(Long id) {
+        return activityRepository.findById(id).orElse(null);
     }
-    public void delete(Activity activity){
+
+    public void delete(Activity activity) {
         activityRepository.delete(activity);
     }
 
@@ -51,6 +54,6 @@ public class ActivityService {
     }
 
     public Activity findByItemAndAccessType(Item folder, AccessEnum access) {
-        return activityRepository.findByItemAndActivityType(folder,access);
+        return activityRepository.findByItemAndActivityType(folder, access);
     }
 }

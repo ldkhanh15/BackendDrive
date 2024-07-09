@@ -28,6 +28,7 @@ public class User {
     @NotBlank
     private String password;
     private String name;
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String refreshToken;
     private String avatar;
 

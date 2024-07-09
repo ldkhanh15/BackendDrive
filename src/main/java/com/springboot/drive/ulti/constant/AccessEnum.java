@@ -5,5 +5,5 @@ import com.springboot.drive.ulti.validator.AccessEnumDeserializer;
 
 @JsonDeserialize(using = AccessEnumDeserializer.class)
 public enum AccessEnum {
-    CREATE, UPDATE, DELETE,VIEW,SOFT_DELETE
+    CREATE, UPDATE, DELETE, VIEW, SOFT_DELETE, ALL
 }

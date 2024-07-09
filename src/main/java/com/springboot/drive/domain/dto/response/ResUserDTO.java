@@ -10,7 +10,7 @@ public class ResUserDTO {
     private long id;
 
     private String email;
-
+    private String name;
     private String avatar;
     private boolean enabled;
     private double storageQuota;
@@ -22,6 +22,7 @@ public class ResUserDTO {
         avatar=user.getAvatar();
         enabled=user.isEnabled();
         storageQuota=user.getStorageQuota();
+        name=user.getName();
         if(user.getRole()!=null){
             role=new RoleUser();
             role.setId(user.getRole().getId());

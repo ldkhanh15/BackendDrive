@@ -49,7 +49,7 @@ public class GlobalException {
     }
 
     @ExceptionHandler(value = NoResourceFoundException.class)
-    public ResponseEntity<RestResponse<Object>> handleNotFound(Exception ex) {
+    public ResponseEntity<RestResponse<Object>> handleNotFound(NoResourceFoundException ex) {
 
         RestResponse<Object> res = new RestResponse<>();
         res.setStatusCode(HttpStatus.NOT_FOUND.value());
@@ -69,30 +69,40 @@ public class GlobalException {
 //
 //        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
 //    }
-//
-//    @ExceptionHandler(value = {
-//            StorageException.class
-//    })
-//    public ResponseEntity<RestResponse<Object>> handleFileException(Exception exception) {
-//        RestResponse<Object> res = new RestResponse<>();
-//
-//        res.setStatusCode(HttpStatus.BAD_REQUEST.value());
-//        res.setError("Exception occurred while uploading file");
-//        res.setMessage(exception.getMessage());
-//        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
-//    }
-//    @ExceptionHandler(value = {
-//            PermissionException.class
-//    })
-//    public ResponseEntity<RestResponse<Object>> handlePermissionException(Exception exception) {
-//        RestResponse<Object> res = new RestResponse<>();
-//
-//        res.setStatusCode(HttpStatus.BAD_REQUEST.value());
-//        res.setError("Forbidden");
-//        res.setMessage(exception.getMessage());
-//        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
-//    }
 
+    @ExceptionHandler(value = {
+            StorageException.class
+    })
+    public ResponseEntity<RestResponse<Object>> handleFileException(Exception exception) {
+        RestResponse<Object> res = new RestResponse<>();
+
+        res.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        res.setError("Exception occurred while uploading file");
+        res.setMessage(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+    @ExceptionHandler(value = {
+            PermissionException.class
+    })
+    public ResponseEntity<RestResponse<Object>> handlePermissionException(Exception exception) {
+        RestResponse<Object> res = new RestResponse<>();
+
+        res.setStatusCode(HttpStatus.FORBIDDEN.value());
+        res.setError("Forbidden");
+        res.setMessage(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+    }
+    @ExceptionHandler(value = {
+            NotOwnerException.class
+    })
+    public ResponseEntity<RestResponse<Object>> handleNotOwner(NotOwnerException exception) {
+        RestResponse<Object> res = new RestResponse<>();
+
+        res.setStatusCode(HttpStatus.FORBIDDEN.value());
+        res.setError("Forbidden");
+        res.setMessage(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+    }
     @ExceptionHandler(value = {
             Exception.class
     })
