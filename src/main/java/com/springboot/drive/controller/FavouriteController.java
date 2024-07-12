@@ -10,6 +10,7 @@ import com.springboot.drive.service.FavouriteService;
 import com.springboot.drive.service.ItemService;
 import com.springboot.drive.service.UserService;
 import com.springboot.drive.ulti.SecurityUtil;
+import com.springboot.drive.ulti.anotation.ApiMessage;
 import com.springboot.drive.ulti.error.InValidException;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
@@ -32,6 +33,21 @@ public class FavouriteController {
         this.userService = userService;
         this.favouriteService =favouriteService;
         this.itemService = itemService;
+    }
+    @GetMapping
+    @ApiMessage(value = "Get all favourite items")
+    public ResponseEntity<ResultPaginationDTO> getFavouriteOfUser(
+            @Filter Specification<Favourite> specification,
+            Pageable pageable
+    ) throws InValidException {
+        String email=SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
+        User user=userService.findByEmail(email);
+        if(user == null){
+            throw new InValidException(
+                    "User with email " + email +" does not exist"
+            );
+        }
+        return ResponseEntity.ok(favouriteService.getAllOfUser(user.getId(),specification,pageable));
     }
     @GetMapping("/{id}")
     public ResponseEntity<ResultPaginationDTO> getAllOfUser(

@@ -5,6 +5,7 @@ import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Activity;
 import com.springboot.drive.domain.modal.File;
 import com.springboot.drive.domain.modal.Folder;
+import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.FileRepository;
 import com.springboot.drive.repository.FolderRepository;
 import com.springboot.drive.ulti.constant.AccessEnum;
@@ -36,9 +37,6 @@ public class FolderService {
         return folderRepository.findAccessibleSubFolders(userId, folderId);
     }
 
-    public List<File> getAccessibleFiles(Long userId, Long folderId) {
-        return fileRepository.findAccessibleFiles(userId, folderId);
-    }
 
     public ResultPaginationDTO getWithAccess(Long userId, Long folderId) {
         Folder folder = folderRepository.findFolder(userId, folderId, AccessEnum.VIEW);
@@ -55,10 +53,12 @@ public class FolderService {
         return resultPaginationDTO;
     }
 
-    public ResultPaginationDTO getAllFolderAndFile(Specification<Folder> specification, Pageable pageable) {
+    public ResultPaginationDTO getAllFolderAndFile(Specification<Folder> specification, Pageable pageable,
+                                                   boolean enabled,boolean isDeleted) {
         Specification<Folder> folderSpec = Specification.where(specification)
                 .and((root, query, builder) -> builder.isNull(root.get("parent")))
-                .and((root, query, builder) ->builder.equal(root.get("isEnabled"),true));
+                .and((root, query, builder) ->builder.equal(root.get("isEnabled"),enabled))
+                .and((root, query, builder) -> builder.equal(root.get("isDeleted"),isDeleted));
         Page<Folder> folders = folderRepository.findAll(folderSpec,pageable);
         List<ResFolderDTO> result = new ArrayList<>();
         folders.getContent().forEach(folder -> result.add(new ResFolderDTO(folder)));
@@ -165,5 +165,13 @@ public class FolderService {
                 fileRepository.save(file);
             }
         }
+    }
+
+    public Folder findByUserAndParent(User user) {
+        List<Folder> folders = folderRepository.findByUserAndIsEnabledAndParent(user,true,null);
+        if((folders != null) && (!folders.isEmpty())){
+            return folders.get(0);
+        }
+        return null;
     }
 }

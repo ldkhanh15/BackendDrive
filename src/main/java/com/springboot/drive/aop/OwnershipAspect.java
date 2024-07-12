@@ -1,16 +1,12 @@
 package com.springboot.drive.aop;
 
-import com.springboot.drive.domain.modal.AccessItem;
-import com.springboot.drive.domain.modal.File;
-import com.springboot.drive.domain.modal.Folder;
-import com.springboot.drive.domain.modal.User;
-import com.springboot.drive.service.AccessService;
-import com.springboot.drive.service.FileService;
-import com.springboot.drive.service.FolderService;
-import com.springboot.drive.service.UserService;
+import com.springboot.drive.domain.dto.request.ReqAccessDTO;
+import com.springboot.drive.domain.modal.*;
+import com.springboot.drive.service.*;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.anotation.FileOwnerShip;
 import com.springboot.drive.ulti.anotation.FolderOwnerShip;
+import com.springboot.drive.ulti.anotation.ItemOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.error.InValidException;
 import com.springboot.drive.ulti.error.NotOwnerException;
@@ -30,17 +26,20 @@ public class OwnershipAspect {
     private final FolderService folderService;
     private final AccessService accessService;
     private final FileService fileService;
+    private final ItemService itemService;
 
     public OwnershipAspect(
             UserService userService,
             FolderService folderService,
             AccessService accessService,
-            FileService fileService
+            FileService fileService,
+            ItemService itemService
     ) {
         this.userService = userService;
         this.folderService = folderService;
         this.accessService = accessService;
         this.fileService = fileService;
+        this.itemService = itemService;
     }
 
     @Before("@annotation(folderOwnerShip) && args(folderId,..)")
@@ -103,6 +102,27 @@ public class OwnershipAspect {
                     throw new NotOwnerException("You cannot access this file");
                 }
             }
+        }
+
+    }
+
+    @Before("@annotation(itemOwnerShip) && args(req,..)")
+    @Order(1)
+    public void checkItemOwnership(ItemOwnerShip itemOwnerShip, ReqAccessDTO req) throws InValidException {
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        User user = userService.findByEmail(email);
+
+        Item item = itemService.findById(req.getItem().getId());
+        if (item == null) {
+            throw new InValidException(
+                    "File does not exist"
+            );
+        }
+        if (item.getUser().getId() != user.getId() && !user.getRole().getName().equals("ROLE_ADMIN")) {
+            throw new NotOwnerException(
+                    "You cannot access to this item"
+            );
+
         }
 
     }

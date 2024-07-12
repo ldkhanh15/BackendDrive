@@ -32,4 +32,6 @@ public interface FileRepository extends JpaRepository<File,Long>, JpaSpecificati
     List<File> findAccessibleFiles(@Param("userId") Long userId, @Param("folderId") Long folderId, @Param("accessType") AccessEnum accessType);
 
     File findByItemIdAndIsEnabled(long id, boolean enabled);
+
+    List<File> findByFileNameLikeAndParent(String fileName, Folder folder);
 }

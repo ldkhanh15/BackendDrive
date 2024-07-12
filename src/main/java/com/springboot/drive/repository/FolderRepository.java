@@ -1,6 +1,7 @@
 package com.springboot.drive.repository;
 
 import com.springboot.drive.domain.modal.Folder;
+import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -12,9 +13,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface FolderRepository extends JpaRepository<Folder,Long>, JpaSpecificationExecutor<Folder> {
-    Folder findByFolderName(String name);
     Folder findByFolderNameAndParent(String name, Folder parent);
-
+    List<Folder> findByUserAndIsEnabledAndParent(User user, boolean isEnabled,Folder parent);
     List<Folder> findByParentIsNullAndIsEnabled(Specification<Folder> specification, Pageable pageable,
                                                  Boolean enabled);
 
@@ -22,7 +22,7 @@ public interface FolderRepository extends JpaRepository<Folder,Long>, JpaSpecifi
     @Query("SELECT f FROM Folder f " +
             "JOIN Item i ON f.itemId = i.itemId " +
             "LEFT JOIN AccessItem ai ON i.itemId = ai.item.itemId " +
-            "WHERE (i.isPublic = true OR ai.user.id = :userId) AND ( i.isEnabled= true ) " +
+            "WHERE (i.isPublic = true OR ai.user.id = :userId) AND ( i.isEnabled= true )  AND i.isDeleted=false " +
             "AND f.parent.itemId = :folderId")
     List<Folder> findAccessibleSubFolders(@Param("userId") Long userId, @Param("folderId") Long folderId);
 
@@ -31,15 +31,15 @@ public interface FolderRepository extends JpaRepository<Folder,Long>, JpaSpecifi
     @Query("SELECT f FROM Folder f " +
             "JOIN Item i ON f.itemId = i.itemId " +
             "LEFT JOIN AccessItem ai ON i.itemId = ai.item.itemId " +
-            "WHERE (i.isPublic = true OR (ai.user.id = :userId AND ai.accessType = :accessType)) AND i.isEnabled = " +
-            "true AND f.itemId = :folderId")
+            "WHERE (i.isPublic = true OR (ai.user.id = :userId AND ai.accessType = :accessType) OR i.user.id=:userId)" +
+            "AND i.isEnabled =true AND i.isDeleted=false AND f.itemId = :folderId")
     Folder findFolder(@Param("userId") Long userId, @Param("folderId") Long folderId, @Param("accessType") AccessEnum accessType);
 
     @Query("SELECT f FROM Folder f " +
             "JOIN Item i ON f.itemId = i.itemId " +
             "LEFT JOIN AccessItem ai ON i.itemId = ai.item.itemId " +
             "WHERE (i.isPublic = true OR (ai.user.id = :userId AND ai.accessType = :accessType )) AND i.isEnabled = " +
-            "true AND f.parent.itemId = :folderId")
+            "true  AND i.isDeleted=false AND f.parent.itemId = :folderId")
     List<Folder> findAccessibleSubFolders(@Param("userId") Long userId, @Param("folderId") Long folderId, @Param("accessType") AccessEnum accessType);
 
 

@@ -55,36 +55,69 @@ public class FolderController {
         activity.setActivityType(accessType);
         activityService.save(activity);
     }
+
+    //ADMIN
     @GetMapping
     @ApiMessage(value = "Get all folder with paging")
-    public ResponseEntity<ResultPaginationDTO> getAll(
+    @FolderOwnerShip(action = AccessEnum.VIEW)
+    public ResponseEntity<ResultPaginationDTO> getAllEnable(
             @Filter Specification<Folder> specification,
             Pageable pageable) {
 
-        return ResponseEntity.ok(folderService.getAllFolderAndFile(specification, pageable));
+        return ResponseEntity.ok(folderService.getAllFolderAndFile(specification, pageable,true,false));
+    }
+    @GetMapping("/disable")
+    @ApiMessage(value = "Get all folder with paging")
+    @FolderOwnerShip(action = AccessEnum.VIEW)
+    public ResponseEntity<ResultPaginationDTO> getAllDisabled(
+            @Filter Specification<Folder> specification,
+            Pageable pageable) {
+        return ResponseEntity.ok(folderService.getAllFolderAndFile(specification, pageable,false,false));
     }
 
 
-//    @GetMapping("/{id}")
-//    @ApiMessage(value = "Get folder with access")
-//    public ResponseEntity<ResultPaginationDTO> getAll(
-//           @PathVariable("id")Long folderId
-//           ) throws InValidException {
-//        Folder folder=folderService.findById(folderId);
-//        if (folder == null){
-//            throw new InValidException(
-//                    "Folder with id " + folderId+" does not exist"
-//            );
-//        }
-//        String email=SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
-//        User user=userService.findByEmail(email);
-//        return ResponseEntity.ok(folderService.getWithAccess(user.getId(), folderId));
-//    }
+    @GetMapping("/deleted")
+    @ApiMessage(value = "Get all deleted folders")
+    @FolderOwnerShip(action = AccessEnum.DELETE)
+    public ResponseEntity<ResultPaginationDTO> getAllDeleted(
+            @Filter Specification<Folder> specification,
+            Pageable pageable) {
+        return ResponseEntity.ok(folderService.getAllFolderAndFile(specification, pageable, false,true));
+    }
+    @GetMapping("/disable")
+    @ApiMessage(value = "Get all folder with paging")
+    @FolderOwnerShip(action = AccessEnum.VIEW)
+    public ResponseEntity<ResultPaginationDTO> getAllDisabledOfUser(
+            @Filter Specification<Folder> specification,
+            Pageable pageable) {
+        return ResponseEntity.ok(folderService.getAllFolderAndFile(specification, pageable,false,false));
+    }
 
+    //CLIENT
+    @GetMapping("/users")
+    @FolderOwnerShip(action = AccessEnum.VIEW)
+    @ApiMessage(value = "Get folder with access")
+    public ResponseEntity<ResFolderDTO> getAll() throws InValidException {
+        String email=SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
+        User user=userService.findByEmail(email);
+        Folder folder=folderService.findByUserAndParent(user);
+        return ResponseEntity.ok(new ResFolderDTO(folder));
+    }
+    @GetMapping("/trash")
+    @ApiMessage(value = "Get all folder with paging")
+    @FolderOwnerShip(action = AccessEnum.VIEW)
+    public ResponseEntity<ResultPaginationDTO> getTrash(
+            @Filter Specification<Folder> specification,
+            Pageable pageable) {
+
+        return ResponseEntity.ok(folderService.getAllFolderAndFile(specification, pageable,false,false));
+    }
+
+    //SHARED
 
     @GetMapping("/{id}")
     @ApiMessage(value = "Get a folder")
-
+    @FolderOwnerShip(action = AccessEnum.VIEW)
     public ResponseEntity<ResFolderDTO> getDetail(
             @PathVariable("id") Long id
     ) throws InValidException {

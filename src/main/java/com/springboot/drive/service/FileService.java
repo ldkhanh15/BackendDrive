@@ -5,6 +5,9 @@ import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.File;
 import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.repository.FileRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,12 +21,23 @@ public class FileService {
         this.fileRepository = fileRepository;
     }
 
-    public ResultPaginationDTO getAll(Folder folder,boolean enabled) {
-        List<File> files=fileRepository.findByParentAndIsEnabled(folder,enabled);
+    public ResultPaginationDTO getAll(Specification<File> specification,
+                                      Pageable pageable,Folder folder, boolean enabled,boolean isDeleted) {
+        Specification<File>spec=Specification.where(specification)
+                .and((root, query, builder) -> builder.equal(root.get("parent"),folder))
+                .and((root, query, builder) ->builder.equal(root.get("isEnabled"),enabled))
+                .and((root, query, builder) -> builder.equal(root.get("isDeleted"),isDeleted));
+        Page<File> files=fileRepository.findAll(spec,pageable);
         List<ResFileDTO> res=files.stream().map(
                 ResFileDTO::new
         ).toList();
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber()+1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(files.getTotalPages());
+        meta.setTotal(files.getTotalElements());
+        resultPaginationDTO.setMeta(meta);
         resultPaginationDTO.setResult(res);
         return resultPaginationDTO;
 
@@ -55,4 +69,8 @@ public class FileService {
         return fileRepository.findByItemIdAndParent(id, folder);
     }
 
+
+    public List<File> findByNameInFolder(Folder folder, String name){
+        return fileRepository.findByFileNameLikeAndParent("%" + name + "%", folder);
+    }
 }

@@ -43,6 +43,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
         String[] whitelist = {
                 "/api/v1/auth/**",
+                "/",
+                "/storage/**"
         };
 
         http
