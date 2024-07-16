@@ -32,31 +32,31 @@ public class PermissionInterceptor implements HandlerInterceptor {
         System.out.println(">>>>METHOD: " + requestMethod);
         System.out.println(">>>>URI: " + requestURI);
 
-        String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() :
-                "";
-
-        User user = userService.findByEmail(email);
-
-        if (user != null) {
-            Role role = user.getRole();
-            if (role != null) {
-                List<Permission> permissions = role.getPermissions();
-
-                boolean check =
-                        permissions.stream().anyMatch(x -> x.getApiPath().equals(path) && x.getMethod().equals(requestMethod));
-
-                if (!check) {
-                    throw new PermissionException(
-                            "You cannot access this endpoint"
-                    );
-                }
-            } else {
-                throw new PermissionException(
-                        "You cannot access this endpoint"
-                );
-            }
-
-        }
+//        String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() :
+//                "";
+//
+//        User user = userService.findByEmail(email);
+//
+//        if (user != null) {
+//            Role role = user.getRole();
+//            if (role != null) {
+//                List<Permission> permissions = role.getPermissions();
+//
+//                boolean check =
+//                        permissions.stream().anyMatch(x -> x.getApiPath().equals(path) && x.getMethod().equals(requestMethod));
+//
+//                if (!check) {
+//                    throw new PermissionException(
+//                            "You cannot access this endpoint"
+//                    );
+//                }
+//            } else {
+//                throw new PermissionException(
+//                        "You cannot access this endpoint"
+//                );
+//            }
+//
+//        }
 
         return true;
 

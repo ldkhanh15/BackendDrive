@@ -3,6 +3,7 @@ package com.springboot.drive.controller;
 import com.springboot.drive.domain.dto.request.ReqAccessDTO;
 import com.springboot.drive.domain.dto.response.ResAccessDTO;
 import com.springboot.drive.domain.dto.response.ResEmailDTO;
+import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.AccessItem;
 import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.domain.modal.Item;
@@ -11,13 +12,13 @@ import com.springboot.drive.service.AccessService;
 import com.springboot.drive.service.EmailService;
 import com.springboot.drive.service.ItemService;
 import com.springboot.drive.service.UserService;
+import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.anotation.ApiMessage;
 import com.springboot.drive.ulti.anotation.ItemOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.error.InValidException;
-import jakarta.persistence.Access;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +41,22 @@ public class AccessController {
         this.itemService=itemService;
         this.emailService=emailService;
     }
+    @GetMapping
+    @ApiMessage(value = "Get all access of item")
+    @ItemOwnerShip
+    public ResponseEntity<ResultPaginationDTO> getAllAccessItems(
+            @RequestParam("itemId") Long itemId,
+            Pageable pageable
+    ) throws InValidException {
+        Item item=itemService.findById(itemId);
+        if(item==null){
+            throw new InValidException(
+                    "Item with id " + itemId+" does not exist"
+            );
+        }
+
+        return ResponseEntity.ok(accessService.getAllAccessItemByItem(item,pageable));
+    }
 
     @PostMapping
     @ApiMessage(value = "create access item")
@@ -53,7 +70,8 @@ public class AccessController {
                     "User with email " + accessDTO.getUser().getEmail()+" does not exist"
             );
         }
-        if(user.getEmail().equalsIgnoreCase(accessDTO.getUser().getEmail())){
+        String email= SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
+        if(email.equalsIgnoreCase(accessDTO.getUser().getEmail())){
             throw new InValidException(
                     "You cannot add permissions for you"
             );

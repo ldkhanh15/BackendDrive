@@ -11,11 +11,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface FileRepository extends JpaRepository<File,Long>, JpaSpecificationExecutor<File> {
-    File findByFileName(String name);
-
-    List<File> findByParentIsNull();
-    List<File> findByParent(Folder parent);
-    List<File> findByParentAndIsEnabled(Folder parent, boolean enabled);
     File findByItemIdAndParent(Long id, Folder folder);
     @Query("SELECT file FROM File file " +
             "JOIN Item i ON file.itemId = i.itemId " +
@@ -34,4 +29,12 @@ public interface FileRepository extends JpaRepository<File,Long>, JpaSpecificati
     File findByItemIdAndIsEnabled(long id, boolean enabled);
 
     List<File> findByFileNameLikeAndParent(String fileName, Folder folder);
+
+
+    @Query("SELECT file FROM File file " +
+            "JOIN Item i ON file.itemId = i.itemId "+
+            "WHERE file.isDeleted=:isDeleted AND file.isEnabled=:isEnabled AND file.parent.itemId=:itemId")
+    List<File>findByParentAndIsEnabledAndIsDeleted(@Param("itemId") Long itemId,@Param("isEnabled")
+            boolean isEnabled,
+            @Param("isDeleted") boolean isDeleted);
 }

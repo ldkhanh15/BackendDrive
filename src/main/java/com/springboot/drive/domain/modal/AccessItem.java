@@ -1,5 +1,6 @@
 package com.springboot.drive.domain.modal;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import jakarta.persistence.*;
@@ -24,6 +25,7 @@ public class AccessItem {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties(value ={"role","accessItems","favourites","items"} )
     private User user;
 
     @Enumerated(EnumType.STRING)
@@ -31,6 +33,7 @@ public class AccessItem {
 
     @ManyToOne
     @JoinColumn(name = "item_id")
+    @JsonIgnoreProperties(value = {"user","activity","favourites","parent","subFolders","files"})
     private Item item;
 
     private Instant createdAt;

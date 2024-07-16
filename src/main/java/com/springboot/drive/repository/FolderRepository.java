@@ -13,7 +13,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface FolderRepository extends JpaRepository<Folder,Long>, JpaSpecificationExecutor<Folder> {
-    Folder findByFolderNameAndParent(String name, Folder parent);
+    List<Folder> findByFolderNameLikeAndParent(String name, Folder parent);
     List<Folder> findByUserAndIsEnabledAndParent(User user, boolean isEnabled,Folder parent);
     List<Folder> findByParentIsNullAndIsEnabled(Specification<Folder> specification, Pageable pageable,
                                                  Boolean enabled);
@@ -42,5 +42,13 @@ public interface FolderRepository extends JpaRepository<Folder,Long>, JpaSpecifi
             "true  AND i.isDeleted=false AND f.parent.itemId = :folderId")
     List<Folder> findAccessibleSubFolders(@Param("userId") Long userId, @Param("folderId") Long folderId, @Param("accessType") AccessEnum accessType);
 
+
+    Folder findByItemIdAndIsEnabledAndIsDeleted(long itemId,boolean isEnabled,boolean isDeleted);
+
+    @Query("SELECT folder FROM Folder folder " +
+            "JOIN Item i ON folder.itemId = i.itemId "+
+            "WHERE folder.isDeleted=:isDeleted AND folder.isEnabled=:isEnabled AND folder.parent.itemId=:itemId")
+    List<Folder>findByParentAndIsEnabledAndIsDeleted(@Param("itemId") Long itemId,
+                                                     @Param("isEnabled") boolean isEnabled,@Param("isDeleted")boolean isDeleted);
 
 }

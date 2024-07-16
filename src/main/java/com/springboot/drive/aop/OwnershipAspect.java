@@ -115,7 +115,7 @@ public class OwnershipAspect {
         Item item = itemService.findById(req.getItem().getId());
         if (item == null) {
             throw new InValidException(
-                    "File does not exist"
+                    "Item does not exist"
             );
         }
         if (item.getUser().getId() != user.getId() && !user.getRole().getName().equals("ROLE_ADMIN")) {

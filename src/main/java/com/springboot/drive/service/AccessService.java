@@ -1,8 +1,8 @@
 package com.springboot.drive.service;
 
+import com.springboot.drive.domain.dto.response.ResAccessDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.AccessItem;
-import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.domain.modal.Item;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.AccessRepository;
@@ -55,5 +55,20 @@ public class AccessService {
 
     public AccessItem findByItemAndUserAndAccessType(Item item, User user, AccessEnum action) {
         return accessRepository.findByItemAndUserAndAccessTypeOrAccessTypeAll(item,user,action);
+    }
+
+    public ResultPaginationDTO getAllAccessItemByItem(Item item, Pageable pageable){
+        Page<AccessItem> accessItems=accessRepository.findByItem(item,pageable);
+        ResultPaginationDTO result=new ResultPaginationDTO();
+
+        ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(accessItems.getTotalPages());
+        meta.setTotal(accessItems.getTotalElements());
+        result.setResult(accessItems.getContent().stream().map(ResAccessDTO::new).toList());
+        result.setMeta(meta);
+
+        return result;
     }
 }

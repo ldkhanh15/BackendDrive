@@ -4,6 +4,8 @@ import com.springboot.drive.domain.modal.AccessItem;
 import com.springboot.drive.domain.modal.Item;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.ulti.constant.AccessEnum;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -17,8 +19,6 @@ public interface AccessRepository extends JpaRepository<AccessItem,Long>, JpaSpe
 
     List<AccessItem> findByItemAndUser(Item item, User user);
 
-    AccessItem findByItemAndUserAndAccessType(Item item, User user, AccessEnum accessType);
-
     @Query(
             "SELECT ai FROM AccessItem ai WHERE ai.item = :item " +
                     "AND ai.user = :user AND " +
@@ -26,4 +26,6 @@ public interface AccessRepository extends JpaRepository<AccessItem,Long>, JpaSpe
                     "ai.accessType = com.springboot.drive.ulti.constant.AccessEnum.ALL)"
     )
     AccessItem findByItemAndUserAndAccessTypeOrAccessTypeAll(@Param("item") Item item, @Param("user") User user, @Param("accessType") AccessEnum accessType);
+
+    Page<AccessItem> findByItem(Item item, Pageable pageable);
 }

@@ -1,5 +1,7 @@
 package com.springboot.drive.controller;
 
+import com.springboot.drive.domain.dto.request.ReqRoleDTO;
+import com.springboot.drive.domain.dto.response.ResRoleDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Role;
 import com.springboot.drive.service.RoleService;
@@ -32,7 +34,7 @@ public class RoleController {
 
     @GetMapping("/{id}")
     @ApiMessage(value = "Get a role")
-    public ResponseEntity<Role> getRole(
+    public ResponseEntity<ResRoleDTO> getRole(
             @PathVariable("id") Long id
     ) throws InValidException {
         Role role = roleService.findById(id);
@@ -41,26 +43,26 @@ public class RoleController {
                     "Role with id " + id + " not found"
             );
         }
-        return ResponseEntity.ok(role);
+        return ResponseEntity.ok(new ResRoleDTO(role));
     }
 
     @PostMapping
     @ApiMessage(value = "Create new role")
-    public ResponseEntity<Role> create(
-            @Valid @RequestBody Role role
+    public ResponseEntity<ResRoleDTO> create(
+            @Valid @RequestBody ReqRoleDTO role
     ) throws InValidException {
         if(roleService.existsByName(role.getName())){
             throw new InValidException(
                     "Role " + role.getName() + " already exists"
             );
         }
-        return ResponseEntity.ok(roleService.save(role));
+        return ResponseEntity.ok(new ResRoleDTO(roleService.save(role)));
     }
 
     @PutMapping
     @ApiMessage(value = "Update a role")
-    public ResponseEntity<Role> update(
-            @Valid @RequestBody Role role
+    public ResponseEntity<ResRoleDTO> update(
+            @Valid @RequestBody ReqRoleDTO role
     ) throws InValidException {
         Role roleDB = roleService.findById(role.getId());
         if (roleDB == null) {
@@ -68,12 +70,9 @@ public class RoleController {
                     "Role with id " + role.getId() + " not found"
             );
         }
-        roleDB.setName(role.getName());
-        roleDB.setActive(role.isActive());
-        roleDB.setDescription(role.getDescription());
-        roleDB.setPermissions(role.getPermissions());
 
-        return ResponseEntity.ok(roleService.update(roleDB));
+
+        return ResponseEntity.ok(new ResRoleDTO(roleService.update(role)));
     }
 
     @DeleteMapping("/{id}")

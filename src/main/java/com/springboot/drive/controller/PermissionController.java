@@ -1,5 +1,7 @@
 package com.springboot.drive.controller;
 
+import com.springboot.drive.domain.dto.request.ReqPermissionDTO;
+import com.springboot.drive.domain.dto.response.ResPermissionDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Permission;
 import com.springboot.drive.service.PermissionService;
@@ -17,7 +19,8 @@ import org.springframework.web.bind.annotation.*;
 public class PermissionController {
 
     private final PermissionService permissionService;
-    public PermissionController(PermissionService permissionService){
+
+    public PermissionController(PermissionService permissionService) {
         this.permissionService = permissionService;
     }
 
@@ -26,71 +29,80 @@ public class PermissionController {
     public ResponseEntity<ResultPaginationDTO> getAllPermissions(
             @Filter Specification<Permission> specification,
             Pageable pageable
-    ){
-        return ResponseEntity.ok().body(permissionService.getAll(specification,pageable));
+    ) {
+        return ResponseEntity.ok().body(permissionService.getAll(specification, pageable));
     }
 
     @GetMapping("/{id}")
     @ApiMessage(value = "Get a permission")
-    public ResponseEntity<Permission> getPermission(
+    public ResponseEntity<ResPermissionDTO> getPermission(
             @PathVariable("id") Long id
     ) throws InValidException {
-        Permission permission=permissionService.getById(id);
-        if(permission==null){
+        Permission permission = permissionService.getById(id);
+        if (permission == null) {
             throw new InValidException(
-                    "Permission with id " + id +" not found"
+                    "Permission with id " + id + " not found"
             );
         }
-        return ResponseEntity.ok(permission);
+        return ResponseEntity.ok(new ResPermissionDTO(permission));
     }
 
     @PostMapping
     @ApiMessage(value = "Create new permission")
-    public ResponseEntity<Permission> create(
-            @Valid @RequestBody Permission permission
+    public ResponseEntity<ResPermissionDTO> create(
+            @Valid @RequestBody ReqPermissionDTO permissionDTO
     ) throws InValidException {
-        if(permissionService.isPermissionExist(permission)){
+        if (permissionService.isPermissionExist(permissionDTO.getModule(),permissionDTO.getMethod(),permissionDTO.getApiPath())) {
             throw new InValidException(
                     "Permission already exists"
             );
         }
-        return ResponseEntity.ok(permissionService.save(permission));
+        Permission permission=new Permission();
+        permission.setName(permissionDTO.getName());
+        permission.setDescription(permissionDTO.getDescription());
+        permission.setApiPath(permissionDTO.getApiPath());
+        permission.setMethod(permission.getMethod());
+        permission.setModule(permissionDTO.getModule());
+        return ResponseEntity.ok(new ResPermissionDTO(permissionService.save(permission)));
     }
 
     @PutMapping
     @ApiMessage(value = "Update a permission")
-    public ResponseEntity<Permission> update(
-            @Valid @RequestBody Permission permission
+    public ResponseEntity<ResPermissionDTO> update(
+            @Valid @RequestBody ReqPermissionDTO permissionDTO
     ) throws InValidException {
-        Permission permissionDB =permissionService.getById(permission.getId());
-        if (permissionDB == null){
+        Permission permissionDB = permissionService.getById(permissionDTO.getId());
+        if (permissionDB == null) {
             throw new InValidException(
-                    "Permission with id " + permission.getId()+" not found"
+                    "Permission with id " + permissionDTO.getId() + " not found"
             );
         }
-        if(permissionService.isPermissionExist(permission)){
-            if(permissionService.isSameName(permission)){
-                throw new InValidException(
-                        "Permission already exists"
-                );
-            }
-
+        Permission exist=permissionService.findByModuleAndMethodAndApiPath(permissionDTO.getModule(),permissionDTO.getMethod(),
+                permissionDTO.getApiPath());
+        if (exist!=null) {
+           if(exist.getId()!=permissionDB.getId()){
+               throw new InValidException(
+                       "Permission already exists"
+               );
+           }
         }
-        permissionDB.setModule(permission.getModule());
-        permissionDB.setMethod(permission.getMethod());
-        permissionDB.setName(permission.getName());
-        permissionDB.setApiPath(permission.getApiPath());
-        return ResponseEntity.ok(permissionService.save(permissionDB));
+        permissionDB.setModule(permissionDTO.getModule());
+        permissionDB.setMethod(permissionDTO.getMethod());
+        permissionDB.setName(permissionDTO.getName());
+        permissionDB.setApiPath(permissionDTO.getApiPath());
+        permissionDB.setDescription(permissionDTO.getDescription());
+        return ResponseEntity.ok(new ResPermissionDTO(permissionService.save(permissionDB)));
     }
+
     @DeleteMapping("/{id}")
     @ApiMessage(value = "Delete a permission")
     public ResponseEntity<Void> delete(
-            @PathVariable("id")Long id
+            @PathVariable("id") Long id
     ) throws InValidException {
-        Permission permissionDB =permissionService.getById(id);
-        if (permissionDB == null){
+        Permission permissionDB = permissionService.getById(id);
+        if (permissionDB == null) {
             throw new InValidException(
-                    "Permission with id " + id+" not found"
+                    "Permission with id " + id + " not found"
             );
         }
         permissionService.delete(permissionDB);

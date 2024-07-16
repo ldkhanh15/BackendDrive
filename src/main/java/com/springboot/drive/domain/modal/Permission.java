@@ -25,16 +25,11 @@ public class Permission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @NotBlank
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
-    @NotBlank
     private String apiPath;
-    @NotBlank
     private String method;
-    @NotBlank
     private String module;
-    @NotBlank
     private String name;
 
     @ManyToMany(fetch = FetchType.LAZY,mappedBy = "permissions")

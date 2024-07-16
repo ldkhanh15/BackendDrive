@@ -2,13 +2,13 @@ package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResFolderDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
-import com.springboot.drive.domain.modal.Activity;
 import com.springboot.drive.domain.modal.File;
 import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.FileRepository;
 import com.springboot.drive.repository.FolderRepository;
 import com.springboot.drive.ulti.constant.AccessEnum;
+import com.springboot.drive.ulti.error.InValidException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class FolderService {
@@ -133,12 +134,20 @@ public class FolderService {
     public Folder findById(long id) {
         return folderRepository.findById(id).orElse(null);
     }
+    public Folder findByIdAndEnable(long id,boolean enable,boolean deleted) {
+        return folderRepository.findByItemIdAndIsEnabledAndIsDeleted(id,enable,deleted);
+    }
     public Folder findByIdAndEnabled(long id,boolean enabled) {
         return folderRepository.findByItemIdAndIsEnabled(id,enabled);
     }
+    public ResFolderDTO getFolderDetails(Long folderId, boolean enabled, boolean deleted,ResFolderDTO resFolderDTO) throws InValidException {
+        List<Folder> subFolders = folderRepository.findByParentAndIsEnabledAndIsDeleted(folderId, enabled, deleted);
+        List<File> files = fileRepository.findByParentAndIsEnabledAndIsDeleted(folderId, enabled, deleted);
 
-    public Folder findByNameAndRootFolder(String name, Folder root) {
-        return folderRepository.findByFolderNameAndParent(name, root);
+        resFolderDTO.setSubFolders(subFolders.stream().map(ResFolderDTO.SubFolder::new).collect(Collectors.toList()));
+        resFolderDTO.setFiles(files.stream().map(ResFolderDTO.FileFolder::new).collect(Collectors.toList()));
+
+        return resFolderDTO;
     }
 
     public void delete(Folder folder) throws URISyntaxException {
@@ -173,5 +182,9 @@ public class FolderService {
             return folders.get(0);
         }
         return null;
+    }
+
+    public List<Folder> findByNameInFolder(Folder folder, String name) {
+        return folderRepository.findByFolderNameLikeAndParent("%" + name + "%", folder);
     }
 }

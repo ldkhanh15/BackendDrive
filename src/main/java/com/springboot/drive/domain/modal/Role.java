@@ -26,14 +26,11 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @NotBlank
     private String name;
 
-    @NotBlank
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
-
-    @NotNull
+    
     private boolean active;
 
 

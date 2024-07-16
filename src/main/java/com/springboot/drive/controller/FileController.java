@@ -16,6 +16,7 @@ import com.springboot.drive.ulti.error.InValidException;
 import com.springboot.drive.ulti.error.StorageException;
 import com.turkraft.springfilter.boot.Filter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -155,7 +158,6 @@ public class FileController {
         }
         file.setViewCount(file.getViewCount() + 1);
 
-        logActivity(file, AccessEnum.VIEW);
 
         return ResponseEntity.ok(new ResFileDTO(fileService.save(file)));
     }
@@ -203,7 +205,7 @@ public class FileController {
         fileDB.setItemType(ItemTypeEnum.FILE);
         fileDB.setViewCount(0L);
         fileDB.setDownloadCount(0L);
-
+        fileDB.setIsDeleted(false);
         File fileSaved = fileService.save(fileDB);
 
         logActivity(fileSaved, AccessEnum.CREATE);
@@ -216,7 +218,7 @@ public class FileController {
     @ApiMessage(value = "Rename a file")
     @FileOwnerShip(action = AccessEnum.UPDATE)
     public ResponseEntity<ResFileDTO> rename(
-            @PathVariable("id")Long folderId,
+            @PathVariable("folderId")Long folderId,
             @RequestBody ReqFileDTO file
     ) throws InValidException {
         File fileDB = fileService.findByIdAndEnabled(file.getId(), true);
@@ -280,7 +282,7 @@ public class FileController {
         return ResponseEntity.ok(null);
     }
 
-    @GetMapping("/{id}/restore")
+    @PostMapping("/{id}/restore")
     @ApiMessage(value = "Restore a file")
     @FolderOwnerShip(action=AccessEnum.UPDATE)
     @FileOwnerShip(action=AccessEnum.UPDATE)
@@ -397,9 +399,37 @@ public class FileController {
     private String createName(Folder folder,String name){
         List<File> files = fileService.findByNameInFolder(folder,name);
 
-        if(files == null){
-            return name;
+        int maxNumber = 0;
+        for (File existingFolder : files) {
+            String existingName = existingFolder.getFileName();
+            if (existingName.equals(name)) {
+                maxNumber = Math.max(maxNumber, 1);
+            } else if (existingName.startsWith(name + " (") && existingName.endsWith(")")) {
+                try {
+                    int number = Integer.parseInt(existingName.substring(name.length() + 2, existingName.length() - 1));
+                    maxNumber = Math.max(maxNumber, number);
+                } catch (NumberFormatException e) {
+                    // Ignore this exception as it's not a valid numbered folder name
+                }
+            }
         }
-        return name+ " ("+(files.size()+1)+")";
+
+       if(maxNumber==0){
+           return name;
+       }
+        return name + " (" + (maxNumber) + ")";
+    }
+    @GetMapping("/{filename:.+}")
+    public ResponseEntity<FileSystemResource> getFile(@PathVariable String filename) {
+        Path path = Paths.get(fileFolder + filename);
+        java.io.File file = path.toFile();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", filename); // Đặt Content-Disposition là inline
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(new FileSystemResource(file));
     }
 }

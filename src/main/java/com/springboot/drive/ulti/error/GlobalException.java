@@ -59,16 +59,16 @@ public class GlobalException {
         return ResponseEntity.badRequest().body(res);
     }
 
-//    @ExceptionHandler(value = CustomAuthenticationException.class)
-//    public ResponseEntity<RestResponse<Object>> handleTokenInValid(Exception ex) {
-//
-//        RestResponse<Object> res = new RestResponse<>();
-//        res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
-//        res.setError("Token invalid or expired !!!");
-//        res.setMessage(ex.getMessage());
-//
-//        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
-//    }
+    @ExceptionHandler(value = CustomAuthenticationException.class)
+    public ResponseEntity<RestResponse<Object>> handleTokenInValid(Exception ex) {
+
+        RestResponse<Object> res = new RestResponse<>();
+        res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
+        res.setError("Token invalid or expired !!!");
+        res.setMessage(ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
+    }
 
     @ExceptionHandler(value = {
             StorageException.class

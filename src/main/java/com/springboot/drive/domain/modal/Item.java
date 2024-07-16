@@ -35,7 +35,7 @@ public abstract class Item {
     private Boolean isDeleted;
     @ManyToOne
     @JoinColumn(name = "owner_id")
-    @JsonIgnoreProperties(value ={ "favourites","accessItems","items"})
+    @JsonIgnoreProperties(value ={ "favourites","accessItems","items","role","activity"})
     private User user;
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -1,5 +1,6 @@
 package com.springboot.drive.service;
 
+import com.springboot.drive.domain.dto.response.ResPermissionDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Permission;
 import com.springboot.drive.repository.PermissionRepository;
@@ -8,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Service
@@ -20,16 +23,19 @@ public class PermissionService {
     }
 
     public ResultPaginationDTO getAll(Specification<Permission> specification, Pageable pageable){
-        Page<Permission> jobs=permissionRepository.findAll(specification,pageable);
+        Page<Permission> permissions=permissionRepository.findAll(specification,pageable);
         ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber()+1);
         meta.setPageSize(pageable.getPageSize());
-        meta.setPages(jobs.getTotalPages());
-        meta.setTotal(jobs.getTotalElements());
+        meta.setPages(permissions.getTotalPages());
+        meta.setTotal(permissions.getTotalElements());
 
         resultPaginationDTO.setMeta(meta);
-        resultPaginationDTO.setResult(jobs.getContent());
+
+        List<ResPermissionDTO> res = permissions.getContent().stream().map(ResPermissionDTO::new).toList();
+
+        resultPaginationDTO.setResult(res);
         return resultPaginationDTO;
     }
 
@@ -44,16 +50,11 @@ public class PermissionService {
 
         permissionRepository.delete(permission);
     }
-    public boolean isPermissionExist(Permission permission){
-        return permissionRepository.existsByModuleAndMethodAndApiPath(permission.getModule(),permission.getMethod(),permission.getApiPath());
+    public boolean isPermissionExist(String module,String method,String apiPath){
+        return permissionRepository.existsByModuleAndMethodAndApiPath(module,method,apiPath);
     }
-
-    public boolean isSameName(Permission p){
-        Permission pDB=getById(p.getId());
-        if(pDB!=null){
-            return p.getName().equalsIgnoreCase(pDB.getName());
-        }
-        return false;
+    public Permission findByModuleAndMethodAndApiPath(String module,String method,String apiPath){
+        return permissionRepository.findByModuleAndMethodAndApiPath(module,method,apiPath);
     }
 
 
