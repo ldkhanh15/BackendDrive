@@ -1,4 +1,4 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.share;
 
 import com.springboot.drive.domain.dto.response.ResUploadFileDTO;
 import com.springboot.drive.service.UploadService;

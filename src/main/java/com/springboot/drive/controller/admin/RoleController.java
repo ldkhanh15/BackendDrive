@@ -1,4 +1,4 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.admin;
 
 import com.springboot.drive.domain.dto.request.ReqRoleDTO;
 import com.springboot.drive.domain.dto.response.ResRoleDTO;
@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/roles")
+@RequestMapping("/api/v1/admin/roles")
 public class RoleController {
     private final RoleService roleService;
 

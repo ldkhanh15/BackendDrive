@@ -6,6 +6,7 @@ import com.springboot.drive.domain.modal.AccessItem;
 import com.springboot.drive.domain.modal.Item;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.AccessRepository;
+import com.springboot.drive.service.spec.AccessItemSpecification;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -54,7 +55,9 @@ public class AccessService {
     }
 
     public AccessItem findByItemAndUserAndAccessType(Item item, User user, AccessEnum action) {
-        return accessRepository.findByItemAndUserAndAccessTypeOrAccessTypeAll(item,user,action);
+        Specification<AccessItem> specification= AccessItemSpecification.findByItemAndUserAndAccessType(item, user,
+                true,false,action);
+        return accessRepository.findOne(specification).orElse(null);
     }
 
     public ResultPaginationDTO getAllAccessItemByItem(Item item, Pageable pageable){

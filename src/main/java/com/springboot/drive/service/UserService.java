@@ -4,6 +4,7 @@ import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.dto.response.ResUserDTO;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.UserRepository;
+import com.springboot.drive.service.spec.UserSpecification;
 import com.springboot.drive.ulti.error.InValidException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -29,8 +30,10 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public ResultPaginationDTO getAllUserPaging(Specification<User> specification, Pageable pageable){
-        Page<User> users=userRepository.findAll(specification,pageable);
+    public ResultPaginationDTO getAllUserPaging(Specification<User> specification, Pageable pageable,Boolean enabled){
+        Specification<User> spec= UserSpecification.findByEnabled(enabled).and(specification);
+
+        Page<User> users=userRepository.findAll(spec,pageable);
         ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber()+1);
@@ -58,6 +61,9 @@ public class UserService {
     }
     public User findById(long id){
         return userRepository.findById(id).orElse(null);
+    }
+    public User findByIdAndEnabled(Long id,Boolean enabled){
+        return userRepository.findByIdAndEnabled(id,enabled);
     }
 
     public User findByEmail(String email){

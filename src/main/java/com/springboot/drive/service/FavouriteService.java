@@ -6,11 +6,16 @@ import com.springboot.drive.domain.modal.Favourite;
 import com.springboot.drive.domain.modal.Item;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.FavouriteRepository;
+import com.springboot.drive.service.spec.FavouriteSpecification;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -42,9 +47,8 @@ public class FavouriteService {
         return resultPaginationDTO;
     }
     public ResultPaginationDTO getAllOfUser(Long userId,Specification<Favourite> specification, Pageable pageable){
-        Specification<Favourite> userSpec = Specification.where(specification)
-                .and((root, query, builder) -> builder.equal(root.get("user").get("id"), userId));
-        Page<Favourite> favourites=favouriteRepository.findAll(userSpec,pageable);
+        Specification<Favourite> spec = FavouriteSpecification.getFavouritesWithAccess(userId);
+        Page<Favourite> favourites=favouriteRepository.findAll(spec,pageable);
         ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta=new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber()+1);

@@ -1,4 +1,4 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.admin;
 
 import com.springboot.drive.domain.dto.request.ReqPermissionDTO;
 import com.springboot.drive.domain.dto.response.ResPermissionDTO;
@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/permissions")
+@RequestMapping("/api/v1/admin/permissions")
 public class PermissionController {
 
     private final PermissionService permissionService;

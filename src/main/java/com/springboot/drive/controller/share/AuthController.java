@@ -1,4 +1,4 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.share;
 
 import com.springboot.drive.domain.dto.request.ReqLoginDTO;
 import com.springboot.drive.domain.dto.response.ResLoginDTO;

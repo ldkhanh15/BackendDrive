@@ -6,7 +6,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ReqLoginDTO {
+public class ReqUserDTO {
+    private Long id;
     @NotBlank(message = "Email khong duoc de trong")
     private String email;
     @NotBlank(message = "Password khong duoc de trong")
@@ -14,10 +15,6 @@ public class ReqLoginDTO {
 
     @NotBlank(message = "Name khong duoc de trong")
     private String name;
-    public ReqLoginDTO(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
 
 
 }

@@ -1,5 +1,6 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.admin;
 
+import com.springboot.drive.domain.dto.request.ReqUserDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.dto.response.ResUserDTO;
 import com.springboot.drive.domain.modal.User;
@@ -24,8 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/users")
-public class UserController {
+@RequestMapping("/api/v1/admin/users")
+public class UserAdminController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final UploadService uploadService;
@@ -34,28 +35,38 @@ public class UserController {
 
     @Value("${upload-file.avatar-folder}")
     private String avatarFolder;
-    public UserController(UserService userService, PasswordEncoder passwordEncoder, UploadService uploadService) {
+    public UserAdminController(UserService userService, PasswordEncoder passwordEncoder, UploadService uploadService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.uploadService = uploadService;
     }
 
-    @GetMapping
-    @ApiMessage(value = "Get all user with paging")
-    public ResponseEntity<ResultPaginationDTO> getAllUser(
+    @GetMapping("/enabled")
+    @ApiMessage(value = "Get all user enabled")
+    public ResponseEntity<ResultPaginationDTO> getAllUserEnabled(
             @Filter Specification<User> specification,
             Pageable pageable) {
 
-        return ResponseEntity.ok(userService.getAllUserPaging(specification, pageable));
+        return ResponseEntity.ok(userService.getAllUserPaging(specification, pageable,true));
+    }
+    @GetMapping("/disabled")
+    @ApiMessage(value = "Get all user disabled")
+    public ResponseEntity<ResultPaginationDTO> getAllUserDisabled(
+            @Filter Specification<User> specification,
+            Pageable pageable) {
+
+        return ResponseEntity.ok(userService.getAllUserPaging(specification, pageable,false));
     }
 
-    @GetMapping("/{id}")
+
+
+    @GetMapping("/{id}/enabled")
     @ApiMessage(value = "Get a new user")
-    public ResponseEntity<ResUserDTO> getDetailUser(
+    public ResponseEntity<ResUserDTO> getDetailUserEnabled(
             @PathVariable("id") Long id
     ) throws InValidException {
-        User userDB = userService.findById(id);
-        if (userDB == null || !userDB.isEnabled()) {
+        User userDB = userService.findByIdAndEnabled(id,true);
+        if (userDB == null) {
             throw new InValidException(
                     "User with id " + id + " does not exist"
             );
@@ -64,42 +75,68 @@ public class UserController {
         return ResponseEntity.ok(resUserDTO);
     }
 
+    @GetMapping("/{id}/disabled")
+    @ApiMessage(value = "Get a new user")
+    public ResponseEntity<ResUserDTO> getDetailUserDisabled(
+            @PathVariable("id") Long id
+    ) throws InValidException {
+        User userDB = userService.findByIdAndEnabled(id,false);
+        if (userDB == null) {
+            throw new InValidException(
+                    "User with id " + id + " does not exist"
+            );
+        }
+        ResUserDTO resUserDTO = new ResUserDTO(userDB);
+        return ResponseEntity.ok(resUserDTO);
+    }
+
+
     @PostMapping
     @ApiMessage(value = "Create a new user")
     public ResponseEntity<ResUserDTO> createUser(
-            @Valid @RequestBody User user
+            @Valid @RequestBody ReqUserDTO userDTO
     ) throws InValidException {
-        User userDB = userService.findByEmail(user.getEmail());
+        User userDB = userService.findByEmail(userDTO.getEmail());
         if (userDB != null) {
             throw new InValidException(
-                    "Email " + user.getEmail() + " already exists"
+                    "Email " + userDTO.getEmail() + " already exists"
             );
         }
-        String hashPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashPassword);
-        user.setEnabled(true);
-        ResUserDTO userDTO = new ResUserDTO(userService.save(user));
-        return ResponseEntity.ok(userDTO);
+        User user=new User();
+        user.setName(userDTO.getName());
+        user.setEmail(userDTO.getEmail());
+        user.setEnabled(false);
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        return ResponseEntity.ok(new ResUserDTO(userService.save(user)));
+    }
+
+    @PostMapping("/confirm")
+    @ApiMessage(value = "Confirm your account")
+    public ResponseEntity<ResUserDTO> confirmUser(
+            @Valid @RequestBody ReqUserDTO userDTO
+    ) throws InValidException {
+        User userDB = userService.findByEmail(userDTO.getEmail());
+        if (userDB == null) {
+            throw new InValidException(
+                    "Email " + userDTO.getEmail() + " does not exists"
+            );
+        }
+        userDB.setEnabled(true);
+        return ResponseEntity.ok(new ResUserDTO(userService.save(userDB)));
     }
 
     @PutMapping
     @ApiMessage(value = "Update a user")
     public ResponseEntity<ResUserDTO> update(
-            @Valid @RequestBody User user
+            @Valid @RequestBody ReqUserDTO user
     ) throws InValidException {
         User userDB = userService.findById(user.getId());
         if (userDB == null) {
             throw new InValidException(
                     "User with Id " + user.getId() + " does not exists"
-            );
-        }
-        userDB.setPassword(user.getPassword());
-        userDB.setAvatar(user.getAvatar());
-
-        ResUserDTO resUserDTO = new ResUserDTO(userService.save(userDB));
-
-        return ResponseEntity.ok(resUserDTO);
-
+            );}
+        userDB.setName(user.getName());
+        return ResponseEntity.ok( new ResUserDTO(userService.save(userDB)));
     }
 
     @DeleteMapping("/{id}")

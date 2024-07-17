@@ -1,14 +1,15 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.admin;
 
 import com.springboot.drive.domain.dto.request.ReqFileDTO;
 import com.springboot.drive.domain.dto.response.ResFileDTO;
-import com.springboot.drive.domain.dto.response.ResUploadFileDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
-import com.springboot.drive.domain.modal.*;
+import com.springboot.drive.domain.modal.Activity;
+import com.springboot.drive.domain.modal.File;
+import com.springboot.drive.domain.modal.Folder;
+import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.service.*;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.anotation.ApiMessage;
-import com.springboot.drive.ulti.anotation.FileOwnerShip;
 import com.springboot.drive.ulti.anotation.FolderOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
@@ -16,7 +17,6 @@ import com.springboot.drive.ulti.error.InValidException;
 import com.springboot.drive.ulti.error.StorageException;
 import com.turkraft.springfilter.boot.Filter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
@@ -31,16 +31,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/folders/{folderId}/files")
-public class FileController {
+@RequestMapping("/api/v1/admin/folders/{folderId}/files")
+public class FileAdminController {
     private final FolderService folderService;
     private final FileService fileService;
 
@@ -53,7 +50,7 @@ public class FileController {
     @Value("${upload-file.file-folder}")
     private String fileFolder;
 
-    public FileController(
+    public FileAdminController(
             FolderService folderService,
             FileService fileService,
             UploadService uploadService,
@@ -81,11 +78,9 @@ public class FileController {
         activityService.save(activity);
     }
 
-    //ADMIN
-    @GetMapping
-    @FolderOwnerShip(action = AccessEnum.VIEW)
-    @ApiMessage(value = "Get Folder")
-    public ResponseEntity<ResultPaginationDTO> getAllByFolderEnabled(
+    @GetMapping("/enabled")
+    @ApiMessage(value = "Get all enabled files")
+    public ResponseEntity<ResultPaginationDTO> getAllEnabledFile(
             @PathVariable("folderId") Long folderId,
             @Filter Specification<File> specification,
             Pageable pageable
@@ -96,12 +91,11 @@ public class FileController {
                     "Folder with id " + folderId + " does not exist"
             );
         }
-        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder, true,false));
+        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder.getItemId(), true,false));
     }
 
     @GetMapping("/disabled")
-    @ApiMessage(value = "Get all trash files")
-    @FolderOwnerShip(action = AccessEnum.VIEW)
+    @ApiMessage(value = "Get all disabled files")
     public ResponseEntity<ResultPaginationDTO> getAllDisabled(
             @PathVariable("folderId") Long folderId,
             @Filter Specification<File> specification,
@@ -113,11 +107,10 @@ public class FileController {
                     "Folder with id " + folderId + " does not exist"
             );
         }
-        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder, false,false));
+        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder.getItemId(), false,false));
     }
     @GetMapping("/deleted")
-    @ApiMessage(value = "Get all trash files")
-    @FolderOwnerShip(action = AccessEnum.VIEW)
+    @ApiMessage(value = "Get all deleted files")
     public ResponseEntity<ResultPaginationDTO> getAllDeleted(
             @PathVariable("folderId") Long folderId,
             @Filter Specification<File> specification,
@@ -129,47 +122,16 @@ public class FileController {
                     "Folder with id " + folderId + " does not exist"
             );
         }
-        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder, false,true));
-    }
-
-
-
-
-    //SHARED
-    @GetMapping("/{id}")
-    @ApiMessage(value = "Get a file by id")
-    @FolderOwnerShip(action = AccessEnum.VIEW)
-    @FileOwnerShip(action = AccessEnum.VIEW)
-    public ResponseEntity<ResFileDTO> getById(
-            @PathVariable("folderId") Long folderId,
-            @PathVariable("id") Long id
-    ) throws InValidException {
-        Folder folder = folderService.findById(folderId);
-        if (folder == null) {
-            throw new InValidException(
-                    "Folder with id " + folderId + " does not exist"
-            );
-        }
-        File file = fileService.findByIdAndParent(id, folder);
-        if (file == null) {
-            throw new InValidException(
-                    "File with id " + id + " does not exist in folder " + folder.getFolderName()
-            );
-        }
-        file.setViewCount(file.getViewCount() + 1);
-
-
-        return ResponseEntity.ok(new ResFileDTO(fileService.save(file)));
+        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder.getItemId(), false,true));
     }
 
     @PostMapping
     @ApiMessage(value = "Upload a file")
-    @FolderOwnerShip(action=AccessEnum.CREATE)
     public ResponseEntity<ResFileDTO> create(
             @PathVariable("folderId") Long folderId,
             @RequestParam(value = "file", required = false) MultipartFile file
     ) throws InValidException, StorageException, URISyntaxException, IOException {
-        Folder folder = folderService.findById(folderId);
+        Folder folder = folderService.findByIdAndEnabled(folderId,true);
         if (folder == null) {
             throw new InValidException(
                     "Folder with id " + folderId + " does not exist"
@@ -216,20 +178,19 @@ public class FileController {
 
     @PutMapping
     @ApiMessage(value = "Rename a file")
-    @FileOwnerShip(action = AccessEnum.UPDATE)
     public ResponseEntity<ResFileDTO> rename(
             @PathVariable("folderId")Long folderId,
             @RequestBody ReqFileDTO file
     ) throws InValidException {
+        Folder folderDB=folderService.findByIdAndEnabled(folderId,true);
         File fileDB = fileService.findByIdAndEnabled(file.getId(), true);
         if (fileDB == null) {
             throw new InValidException(
                     "File with id " + file.getId() + " does not exist"
             );
         }
-        fileDB.setFileName(file.getFileName());
+        fileDB.setFileName(createName(folderDB,file.getFileName()));
         fileDB.setIsPublic(file.isPublic());
-
 
         logActivity(fileDB, AccessEnum.UPDATE);
         return ResponseEntity.ok().body(new ResFileDTO(fileService.save(fileDB)));
@@ -237,33 +198,28 @@ public class FileController {
 
     @DeleteMapping("/{id}/soft-delete")
     @ApiMessage(value = "Soft delete a file")
-    @FolderOwnerShip(action=AccessEnum.SOFT_DELETE)
-    @FileOwnerShip(action=AccessEnum.SOFT_DELETE)
     public ResponseEntity<Void> softDelete(
             @PathVariable("folderId")Long folderId,
             @PathVariable("id") Long id
     ) throws InValidException {
-        File fileDB = fileService.findByIdAndEnabled(id, true);
+        File fileDB = fileService.findByIdAndEnabledAndDeleted(id, true,false);
         if (fileDB == null) {
             throw new InValidException(
                     "File with id " + id + " does not exist"
             );
         }
         fileService.softDelete(fileDB);
-
         logActivity(fileDB, AccessEnum.SOFT_DELETE);
         return ResponseEntity.ok(null);
     }
 
     @DeleteMapping("/{id}")
     @ApiMessage(value = "Delete a file")
-    @FolderOwnerShip(action=AccessEnum.DELETE)
-    @FileOwnerShip(action=AccessEnum.DELETE)
     public ResponseEntity<Void> delete(
             @PathVariable("folderId")Long folderId,
             @PathVariable Long id
     ) throws InValidException, URISyntaxException {
-        File fileDB = fileService.findByIdAndEnabled(id, false);
+        File fileDB = fileService.findByIdAndEnabledAndDeleted(id, false,false);
         if (fileDB == null) {
             throw new InValidException(
                     "File with id " + id + " does not exist"
@@ -274,7 +230,6 @@ public class FileController {
                     "File name " + fileDB.getFilePath() + " does not exist in " + fileFolder
             );
         }
-        uploadService.deleteFile(fileDB.getFilePath(), fileFolder);
 
         fileService.delete(fileDB);
 
@@ -284,13 +239,11 @@ public class FileController {
 
     @PostMapping("/{id}/restore")
     @ApiMessage(value = "Restore a file")
-    @FolderOwnerShip(action=AccessEnum.UPDATE)
-    @FileOwnerShip(action=AccessEnum.UPDATE)
     public ResponseEntity<ResFileDTO> restore(
             @PathVariable("folderId")Long folderId,
             @PathVariable("id") long id
     ) throws InValidException {
-        File file = fileService.findByIdAndEnabled(id, false);
+        File file = fileService.findByIdAndEnabledAndDeleted(id, false,false);
         if (file == null) {
             throw new InValidException(
                     "File with id " + id + " does not exist"
@@ -302,8 +255,6 @@ public class FileController {
 
     @PostMapping("/{id}/download")
     @ApiMessage(value = "Download file")
-    @FolderOwnerShip(action = AccessEnum.VIEW)
-    @FileOwnerShip(action = AccessEnum.VIEW)
     public ResponseEntity<Resource> download(
             @PathVariable("folderId")Long folderId,
             @PathVariable("id") Long id
@@ -409,7 +360,7 @@ public class FileController {
                     int number = Integer.parseInt(existingName.substring(name.length() + 2, existingName.length() - 1));
                     maxNumber = Math.max(maxNumber, number);
                 } catch (NumberFormatException e) {
-                    // Ignore this exception as it's not a valid numbered folder name
+
                 }
             }
         }
@@ -418,18 +369,5 @@ public class FileController {
            return name;
        }
         return name + " (" + (maxNumber) + ")";
-    }
-    @GetMapping("/{filename:.+}")
-    public ResponseEntity<FileSystemResource> getFile(@PathVariable String filename) {
-        Path path = Paths.get(fileFolder + filename);
-        java.io.File file = path.toFile();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("inline", filename); // Đặt Content-Disposition là inline
-
-        return ResponseEntity.ok()
-                .headers(headers)
-                .body(new FileSystemResource(file));
     }
 }

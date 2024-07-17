@@ -44,6 +44,12 @@ public abstract class Item {
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties(value = {"items"})
     private List<Favourite> favourites;
+
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties(value = {"user","item"})
+    private List<AccessItem> accessItems;
+
+
     @PrePersist
     public void handleBeforeCreate(){
         this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get():"";

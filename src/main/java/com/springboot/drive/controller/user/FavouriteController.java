@@ -1,4 +1,4 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.user;
 
 import com.springboot.drive.domain.dto.request.ReqFavouriteDTO;
 import com.springboot.drive.domain.dto.response.ResFavouriteDTO;
@@ -20,7 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/favourites")
+@RequestMapping("/api/v1/user/favourites")
 public class FavouriteController {
     private final UserService userService;
     private final FavouriteService favouriteService;
@@ -35,7 +35,7 @@ public class FavouriteController {
         this.itemService = itemService;
     }
     @GetMapping
-    @ApiMessage(value = "Get all favourite items")
+    @ApiMessage(value = "Get all favourite items of user")
     public ResponseEntity<ResultPaginationDTO> getFavouriteOfUser(
             @Filter Specification<Favourite> specification,
             Pageable pageable
@@ -64,6 +64,7 @@ public class FavouriteController {
         return ResponseEntity.ok(favouriteService.getAllOfUser(userId,specification,pageable));
     }
     @PostMapping()
+    @ApiMessage(value = "Add item to favorites")
     public ResponseEntity<ResFavouriteDTO> create(
             @Valid@RequestBody ReqFavouriteDTO favourite
     ) throws InValidException {
@@ -88,6 +89,7 @@ public class FavouriteController {
         return ResponseEntity.ok(new ResFavouriteDTO(favouriteService.save(f)));
     }
     @DeleteMapping("/{id}")
+    @ApiMessage(value = "Delete item from favorites")
     public ResponseEntity<Void> delete(
             @PathVariable("id")Long id
     ) throws InValidException {

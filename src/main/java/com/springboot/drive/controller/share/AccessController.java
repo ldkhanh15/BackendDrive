@@ -1,4 +1,4 @@
-package com.springboot.drive.controller;
+package com.springboot.drive.controller.share;
 
 import com.springboot.drive.domain.dto.request.ReqAccessDTO;
 import com.springboot.drive.domain.dto.response.ResAccessDTO;

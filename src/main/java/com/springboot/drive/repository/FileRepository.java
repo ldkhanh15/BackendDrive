@@ -37,4 +37,6 @@ public interface FileRepository extends JpaRepository<File,Long>, JpaSpecificati
     List<File>findByParentAndIsEnabledAndIsDeleted(@Param("itemId") Long itemId,@Param("isEnabled")
             boolean isEnabled,
             @Param("isDeleted") boolean isDeleted);
+
+    File findByItemIdAndIsEnabledAndIsDeleted(Long id, Boolean enabled, Boolean deleted);
 }
