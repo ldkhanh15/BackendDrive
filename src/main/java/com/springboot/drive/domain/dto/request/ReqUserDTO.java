@@ -16,5 +16,12 @@ public class ReqUserDTO {
     @NotBlank(message = "Name khong duoc de trong")
     private String name;
 
+    private RoleUser role;
+
+    @Getter
+    @Setter
+    public static class RoleUser{
+        private Long id;
+    }
 
 }

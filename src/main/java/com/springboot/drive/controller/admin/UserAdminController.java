@@ -1,12 +1,18 @@
 package com.springboot.drive.controller.admin;
 
+import com.springboot.drive.domain.dto.request.ReqPassword;
 import com.springboot.drive.domain.dto.request.ReqUserDTO;
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.dto.response.ResUserDTO;
+import com.springboot.drive.domain.modal.Folder;
+import com.springboot.drive.domain.modal.Role;
 import com.springboot.drive.domain.modal.User;
+import com.springboot.drive.service.FolderService;
+import com.springboot.drive.service.RoleService;
 import com.springboot.drive.service.UploadService;
 import com.springboot.drive.service.UserService;
 import com.springboot.drive.ulti.anotation.ApiMessage;
+import com.springboot.drive.ulti.constant.ItemTypeEnum;
 import com.springboot.drive.ulti.error.InValidException;
 import com.springboot.drive.ulti.error.StorageException;
 import com.turkraft.springfilter.boot.Filter;
@@ -15,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,29 +42,44 @@ public class UserAdminController {
 
     @Value("${upload-file.avatar-folder}")
     private String avatarFolder;
-    public UserAdminController(UserService userService, PasswordEncoder passwordEncoder, UploadService uploadService) {
+    private final RoleService roleService;
+    private final FolderService folderService;
+
+    public UserAdminController(
+            UserService userService,
+            PasswordEncoder passwordEncoder,
+            UploadService uploadService,
+            RoleService roleService,
+            FolderService folderService
+    ) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.uploadService = uploadService;
+        this.roleService = roleService;
+        this.folderService=folderService;
     }
 
     @GetMapping("/enabled")
     @ApiMessage(value = "Get all user enabled")
     public ResponseEntity<ResultPaginationDTO> getAllUserEnabled(
             @Filter Specification<User> specification,
-            Pageable pageable) {
+            Pageable pageable,
+            @RequestParam("query") String query
+    ) {
 
-        return ResponseEntity.ok(userService.getAllUserPaging(specification, pageable,true));
+        return ResponseEntity.ok(userService.getAllUserPaging(specification, pageable, true,query));
     }
+
     @GetMapping("/disabled")
     @ApiMessage(value = "Get all user disabled")
     public ResponseEntity<ResultPaginationDTO> getAllUserDisabled(
             @Filter Specification<User> specification,
-            Pageable pageable) {
+            Pageable pageable,
+            @RequestParam("query") String query
+    ) {
 
-        return ResponseEntity.ok(userService.getAllUserPaging(specification, pageable,false));
+        return ResponseEntity.ok(userService.getAllUserPaging(specification, pageable, false,query));
     }
-
 
 
     @GetMapping("/{id}/enabled")
@@ -65,7 +87,7 @@ public class UserAdminController {
     public ResponseEntity<ResUserDTO> getDetailUserEnabled(
             @PathVariable("id") Long id
     ) throws InValidException {
-        User userDB = userService.findByIdAndEnabled(id,true);
+        User userDB = userService.findByIdAndEnabled(id, true);
         if (userDB == null) {
             throw new InValidException(
                     "User with id " + id + " does not exist"
@@ -80,7 +102,7 @@ public class UserAdminController {
     public ResponseEntity<ResUserDTO> getDetailUserDisabled(
             @PathVariable("id") Long id
     ) throws InValidException {
-        User userDB = userService.findByIdAndEnabled(id,false);
+        User userDB = userService.findByIdAndEnabled(id, false);
         if (userDB == null) {
             throw new InValidException(
                     "User with id " + id + " does not exist"
@@ -102,27 +124,14 @@ public class UserAdminController {
                     "Email " + userDTO.getEmail() + " already exists"
             );
         }
-        User user=new User();
+        Role role = roleService.findById(userDTO.getRole().getId());
+        User user = new User();
+        user.setRole(role);
         user.setName(userDTO.getName());
         user.setEmail(userDTO.getEmail());
-        user.setEnabled(false);
+        user.setEnabled(true);
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         return ResponseEntity.ok(new ResUserDTO(userService.save(user)));
-    }
-
-    @PostMapping("/confirm")
-    @ApiMessage(value = "Confirm your account")
-    public ResponseEntity<ResUserDTO> confirmUser(
-            @Valid @RequestBody ReqUserDTO userDTO
-    ) throws InValidException {
-        User userDB = userService.findByEmail(userDTO.getEmail());
-        if (userDB == null) {
-            throw new InValidException(
-                    "Email " + userDTO.getEmail() + " does not exists"
-            );
-        }
-        userDB.setEnabled(true);
-        return ResponseEntity.ok(new ResUserDTO(userService.save(userDB)));
     }
 
     @PutMapping
@@ -134,9 +143,16 @@ public class UserAdminController {
         if (userDB == null) {
             throw new InValidException(
                     "User with Id " + user.getId() + " does not exists"
-            );}
+            );
+        }
+        if(user.getRole()!=null){
+            if(user.getRole().getId()!=userDB.getRole().getId()){
+                Role role = roleService.findById(user.getRole().getId());
+                userDB.setRole(role);
+            }
+        }
         userDB.setName(user.getName());
-        return ResponseEntity.ok( new ResUserDTO(userService.save(userDB)));
+        return ResponseEntity.ok(new ResUserDTO(userService.save(userDB)));
     }
 
     @DeleteMapping("/{id}")
@@ -176,29 +192,34 @@ public class UserAdminController {
         uploadService.createDirectory(basePath + avatarFolder);
         String fileStorage = uploadService.store(file, avatarFolder);
 
-        if(user.getAvatar()!=null){
-            uploadService.deleteFile(user.getAvatar(),avatarFolder);
+        if (user.getAvatar() != null) {
+            uploadService.deleteFile(user.getAvatar(), avatarFolder);
         }
         user.setAvatar(fileStorage);
 
-        return  ResponseEntity.ok(new ResUserDTO(userService.save(user)));
+        return ResponseEntity.ok(new ResUserDTO(userService.save(user)));
 
     }
+
     @PostMapping("/{id}/change-password")
     @ApiMessage(value = "Reset user password")
     public ResponseEntity<Void> resetPassword(
             @PathVariable("id") Long id,
-            @RequestParam("newPassword") String newPassword
+            @RequestBody ReqPassword newPassword
     ) throws InValidException {
         User user = userService.findById(id);
         if (user == null) {
             throw new InValidException("User with id " + id + " does not exist");
         }
-        String hashPassword = passwordEncoder.encode(newPassword);
+        if (!passwordEncoder.matches(newPassword.getOldPassword(), user.getPassword())) {
+            throw new InValidException("Password is incorrect");
+        }
+        String hashPassword = passwordEncoder.encode(newPassword.getNewPassword());
         user.setPassword(hashPassword);
         userService.save(user);
         return ResponseEntity.ok(null);
     }
+
     @PostMapping("/{id}/activate")
     @ApiMessage(value = "Activate user account")
     public ResponseEntity<Void> activateUser(
@@ -210,6 +231,7 @@ public class UserAdminController {
         }
         user.setEnabled(true);
         userService.save(user);
+        folderIsEnabled(user,true);
         return ResponseEntity.ok(null);
     }
 
@@ -224,6 +246,7 @@ public class UserAdminController {
         }
         user.setEnabled(false);
         userService.save(user);
+        folderIsEnabled(user,false);
         return ResponseEntity.ok(null);
     }
 
@@ -234,9 +257,32 @@ public class UserAdminController {
             @RequestParam("file") MultipartFile file
     ) throws IOException, InValidException {
         List<User> users = userService.parseUsersFromFile(file);
-        List<User> userDB=userService.saveAll(users);
-        List<ResUserDTO> res=userDB.stream().map(ResUserDTO::new).toList();
+        List<User> userDB = userService.saveAll(users);
+
+        List<ResUserDTO> res = userDB.stream().map(x->{
+            createFolderRoot(x);
+            return new ResUserDTO(x);
+        }).toList();
         return ResponseEntity.ok(res);
+    }
+    private void folderIsEnabled(User user,Boolean enabled){
+        Folder folder=folderService.activeFolderOfUserDeActive(user);
+        if(folder!=null){
+            folder.setIsEnabled(enabled);
+            folderService.save(folder);
+        }
+    }
+    @Async
+    protected void createFolderRoot(User user) {
+        Folder folder = new Folder();
+        folder.setUser(user);
+        folder.setFolderName(String.valueOf(user.getId()) + "DRIVE_" + user.getName());
+        folder.setIsEnabled(true);
+        folder.setIsPublic(true);
+        folder.setParent(null);
+        folder.setItemType(ItemTypeEnum.FOLDER);
+        folder.setIsDeleted(false);
+        folderService.save(folder);
     }
 
 }

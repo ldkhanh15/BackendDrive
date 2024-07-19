@@ -29,33 +29,35 @@ public class ResFileDTO {
     private Boolean isDeleted;
     private UserFile user;
     private ParentFolder parent;
-    public ResFileDTO(File file){
-        id=file.getItemId();
-        fileType=file.getFileType();
-        fileName=file.getFileName();
-        fileSize=file.getFileSize();
-        filePath=file.getFilePath();
-        downloadCount=file.getDownloadCount();
-        viewCount=file.getViewCount();
-        isEnabled=file.getIsEnabled();
-        isPublic= file.getIsPublic();
-        isDeleted=file.getIsDeleted();
+
+    public ResFileDTO(File file) {
+        id = file.getItemId();
+        fileType = file.getFileType();
+        fileName = file.getFileName();
+        fileSize = file.getFileSize();
+        filePath = file.getFilePath();
+        downloadCount = file.getDownloadCount();
+        viewCount = file.getViewCount();
+        isEnabled = file.getIsEnabled();
+        isPublic = file.getIsPublic();
+        isDeleted = file.getIsDeleted();
         createdAt = file.getCreatedAt();
         createdBy = file.getCreatedBy();
         updatedAt = file.getUpdatedAt();
         updatedBy = file.getUpdatedBy();
 
-        if(file.getUser()!=null){
-            user=new UserFile();
+        if (file.getUser() != null) {
+            user = new UserFile();
             user.setId(file.getUser().getId());
             user.setName(file.getUser().getName());
             user.setEmail(file.getUser().getEmail());
 
         }
-        if(file.getParent()!=null){
-            parent=new ParentFolder(file.getParent());
+        if (file.getParent() != null) {
+            parent = new ParentFolder(file.getParent());
         }
     }
+
     @Getter
     @Setter
     public static class UserFile {
@@ -63,6 +65,7 @@ public class ResFileDTO {
         private String name;
         private String email;
     }
+
     @Getter
     @Setter
     @AllArgsConstructor
@@ -76,7 +79,8 @@ public class ResFileDTO {
         private Boolean isPublic;
         private Boolean isEnabled;
         private String folderName;
-        public ParentFolder(Folder folder){
+
+        public ParentFolder(Folder folder) {
             itemId = folder.getItemId();
             isEnabled = folder.getIsEnabled();
             isPublic = folder.getIsPublic();

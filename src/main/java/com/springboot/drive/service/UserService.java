@@ -2,6 +2,7 @@ package com.springboot.drive.service;
 
 import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.dto.response.ResUserDTO;
+import com.springboot.drive.domain.modal.Role;
 import com.springboot.drive.domain.modal.User;
 import com.springboot.drive.repository.UserRepository;
 import com.springboot.drive.service.spec.UserSpecification;
@@ -25,13 +26,16 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    public UserService(UserRepository userRepository,PasswordEncoder passwordEncoder){
+    private final RoleService roleService;
+    public UserService(UserRepository userRepository,PasswordEncoder passwordEncoder,RoleService roleService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.roleService=roleService;
     }
 
-    public ResultPaginationDTO getAllUserPaging(Specification<User> specification, Pageable pageable,Boolean enabled){
-        Specification<User> spec= UserSpecification.findByEnabled(enabled).and(specification);
+    public ResultPaginationDTO getAllUserPaging(Specification<User> specification, Pageable pageable,Boolean enabled,
+                                                String query){
+        Specification<User> spec= UserSpecification.findByEnabledAndNameOrEmail(enabled,query).and(specification);
 
         Page<User> users=userRepository.findAll(spec,pageable);
         ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
@@ -66,16 +70,16 @@ public class UserService {
         return userRepository.findByIdAndEnabled(id,enabled);
     }
 
-    public User findByEmail(String email){
-        return userRepository.findByEmail(email);
+    public User findByEmailAndEnabled(String email,boolean enabled){
+        return userRepository.findByEmailAndEnabled(email,enabled);
     }
 
-    public User findByEmailAndRefreshToken(String email, String refreshToken) {
-        return userRepository.findByEmailAndRefreshToken(email, refreshToken);
+    public User findByEmailAndRefreshTokenAndEnabled(String email, String refreshToken,Boolean enabled) {
+        return userRepository.findByEmailAndRefreshTokenAndEnabled(email, refreshToken,enabled);
     }
 
     public void updateUserToken(String token, String email) {
-        User currentUser = userRepository.findByEmail(email);
+        User currentUser = userRepository.findByEmailAndEnabled(email,true);
         if (currentUser != null) {
             currentUser.setRefreshToken(token);
             userRepository.save(currentUser);
@@ -84,6 +88,7 @@ public class UserService {
 
     public List<User> parseUsersFromFile(MultipartFile file) throws IOException, InValidException {
         List<User> users = new ArrayList<>();
+        Role roleDefault=roleService.findByName("ROLE_USER");
         try (InputStreamReader reader = new InputStreamReader(file.getInputStream());
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader())) {
 
@@ -97,9 +102,19 @@ public class UserService {
                 user.setEmail(csvRecord.get("email"));
                 String hashPassword = csvRecord.get("password");
                 user.setPassword(passwordEncoder.encode(hashPassword));
+
+                String roleName=csvRecord.get("role");
+                if(roleName!=null && !roleName.isEmpty()) {
+                    Role role=roleService.findByName(roleName);
+                    if (role != null) {
+                        user.setRole(role);
+                    }else{
+                        user.setRole(roleDefault);
+                    }
+                }else{
+                    user.setRole(roleDefault);
+                }
                 user.setEnabled(true);
-
-
                 users.add(user);
             }
         } catch (Exception e) {
@@ -110,5 +125,9 @@ public class UserService {
 
     public List<User> saveAll(List<User> users) {
         return userRepository.saveAll(users);
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 }

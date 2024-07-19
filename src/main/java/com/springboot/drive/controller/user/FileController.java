@@ -53,6 +53,10 @@ public class FileController {
     @Value("${upload-file.file-folder}")
     private String fileFolder;
 
+
+    @Value("${storage.max-data}")
+    private Long storageLimit;
+
     public FileController(
             FolderService folderService,
             FileService fileService,
@@ -84,7 +88,6 @@ public class FileController {
 
     @GetMapping("/{id}")
     @ApiMessage(value = "Get a file by id")
-    @FolderOwnerShip(action = AccessEnum.VIEW)
     @FileOwnerShip(action = AccessEnum.VIEW)
     public ResponseEntity<ResFileDTO> getById(
             @PathVariable("folderId") Long folderId,
@@ -138,6 +141,11 @@ public class FileController {
         String fileStorage = uploadService.store(file, fileFolder);
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
         User user = userService.findByEmail(email);
+        if(user.getStorageQuota()+file.getSize()>storageLimit){
+            throw new InValidException(
+                    "You cannot upload more 15GB"
+            );
+        }
         File fileDB = new File();
         fileDB.setIsEnabled(true);
         fileDB.setIsPublic(true);
@@ -230,8 +238,8 @@ public class FileController {
 
     @PostMapping("/{id}/restore")
     @ApiMessage(value = "Restore a file")
-    @FolderOwnerShip(action=AccessEnum.UPDATE)
-    @FileOwnerShip(action=AccessEnum.UPDATE)
+    @FolderOwnerShip(action=AccessEnum.DELETE)
+    @FileOwnerShip(action=AccessEnum.DELETE)
     public ResponseEntity<ResFileDTO> restore(
             @PathVariable("folderId")Long folderId,
             @PathVariable("id") long id
@@ -315,6 +323,11 @@ public class FileController {
                         String fileStorage = uploadService.store(file, fileFolder);
                         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
                         User user = userService.findByEmail(email);
+                        if(user.getStorageQuota()+file.getSize()>storageLimit){
+                            throw new InValidException(
+                                    "You cannot upload more 15GB"
+                            );
+                        }
                         File fileDB = new File();
                         fileDB.setIsEnabled(true);
                         fileDB.setIsPublic(true);
@@ -336,6 +349,8 @@ public class FileController {
 
                     } catch (IOException | StorageException | URISyntaxException e) {
                         throw new RuntimeException(e.getMessage(), e);
+                    } catch (InValidException e) {
+                        throw new RuntimeException(e);
                     }
                 })
                 .collect(Collectors.toList());

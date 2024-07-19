@@ -1,18 +1,25 @@
 package com.springboot.drive.controller.share;
 
 import com.springboot.drive.domain.dto.request.ReqLoginDTO;
+import com.springboot.drive.domain.dto.request.ReqRegisterDTO;
 import com.springboot.drive.domain.dto.response.ResLoginDTO;
 import com.springboot.drive.domain.dto.response.ResUserDTO;
+import com.springboot.drive.domain.modal.Folder;
+import com.springboot.drive.domain.modal.Role;
 import com.springboot.drive.domain.modal.User;
+import com.springboot.drive.service.FolderService;
+import com.springboot.drive.service.RoleService;
 import com.springboot.drive.service.UserService;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.anotation.ApiMessage;
+import com.springboot.drive.ulti.constant.ItemTypeEnum;
 import com.springboot.drive.ulti.error.InValidException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -30,15 +37,25 @@ public class AuthController {
     @Value("${jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
-    private final SecurityUtil securityUtil;
+    private final FolderService folderService;
 
-    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
-                          UserService userService, PasswordEncoder passwordEncoder
+    private final SecurityUtil securityUtil;
+    private final RoleService roleService;
+
+    public AuthController(
+            AuthenticationManagerBuilder authenticationManagerBuilder,
+            SecurityUtil securityUtil,
+            UserService userService,
+            PasswordEncoder passwordEncoder,
+            FolderService folderService,
+            RoleService roleService
     ) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.folderService = folderService;
+        this.roleService = roleService;
     }
 
     @PostMapping("/login")
@@ -48,7 +65,7 @@ public class AuthController {
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        User currentUserDB = userService.findByEmail(loginDTO.getEmail());
+        User currentUserDB = userService.findByEmailAndEnabled(loginDTO.getEmail(), true);
         ResLoginDTO res = new ResLoginDTO(currentUserDB);
 
         String token = securityUtil.accessToken(authentication.getName(), res);
@@ -80,7 +97,7 @@ public class AuthController {
     @ApiMessage(value = "Get account")
     public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
-        User currentUserDB = userService.findByEmail(email);
+        User currentUserDB = userService.findByEmailAndEnabled(email, true);
         ResLoginDTO.UserGetAccount userGetAccount = new ResLoginDTO.UserGetAccount(currentUserDB);
         return ResponseEntity.ok().body(userGetAccount);
     }
@@ -97,12 +114,12 @@ public class AuthController {
         Jwt jwt = securityUtil.checkValidToken(refresh_token);
         String email = jwt.getSubject();
 
-        User user = userService.findByEmailAndRefreshToken(email, refresh_token);
+        User user = userService.findByEmailAndRefreshTokenAndEnabled(email, refresh_token, true);
         if (user == null) {
             throw new InValidException("Refresh token is invalid");
         }
 
-        User currentUserDB = userService.findByEmail(user.getEmail());
+        User currentUserDB = userService.findByEmailAndEnabled(user.getEmail(), true);
         ResLoginDTO res = new ResLoginDTO(currentUserDB);
 
         String token = securityUtil.accessToken(user.getEmail(), res);
@@ -153,21 +170,43 @@ public class AuthController {
     @PostMapping("/register")
     @ApiMessage(value = "Register an account")
     public ResponseEntity<ResUserDTO> register(
-            @Valid @RequestBody User user
+            @Valid @RequestBody ReqRegisterDTO userDTO
     ) throws InValidException {
-        User userDB = userService.findByEmail(user.getEmail());
+        User userDB = userService.findByEmail(userDTO.getEmail());
         if (userDB != null) {
             throw new InValidException(
-                    "Email " + user.getEmail() + " already registered"
+                    "Email " + userDTO.getEmail() + " already registered"
             );
         }
-        String hashPassword = passwordEncoder.encode(user.getPassword());
+
+        Role roleUser = roleService.findByName("ROLE_USER");
+
+        String hashPassword = passwordEncoder.encode(userDTO.getPassword());
+        User user = new User();
         user.setPassword(hashPassword);
+        user.setEmail(userDTO.getEmail());
+        user.setName(userDTO.getName());
+        user.setRole(roleUser);
+        user.setEnabled(true);
+
         User us = userService.save(user);
         ResUserDTO dto = new ResUserDTO(us);
 
+        createFolderRoot(us);
         return ResponseEntity.ok(dto);
 
     }
 
+    @Async
+    protected void createFolderRoot(User user) {
+        Folder folder = new Folder();
+        folder.setUser(user);
+        folder.setFolderName(String.valueOf(user.getId()) + "DRIVE_" + user.getName());
+        folder.setIsEnabled(true);
+        folder.setIsPublic(true);
+        folder.setParent(null);
+        folder.setItemType(ItemTypeEnum.FOLDER);
+        folder.setIsDeleted(false);
+        folderService.save(folder);
+    }
 }

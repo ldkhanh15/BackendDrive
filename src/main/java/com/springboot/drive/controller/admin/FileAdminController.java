@@ -50,6 +50,9 @@ public class FileAdminController {
     @Value("${upload-file.file-folder}")
     private String fileFolder;
 
+    @Value("${storage.max-data}")
+    private Long storageLimit;
+
     public FileAdminController(
             FolderService folderService,
             FileService fileService,
@@ -154,6 +157,11 @@ public class FileAdminController {
         String fileStorage = uploadService.store(file, fileFolder);
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
         User user = userService.findByEmail(email);
+        if(user.getStorageQuota()+file.getSize()>storageLimit){
+            throw new InValidException(
+                    "You cannot upload more 15GB"
+            );
+        }
         File fileDB = new File();
         fileDB.setIsEnabled(true);
         fileDB.setIsPublic(true);

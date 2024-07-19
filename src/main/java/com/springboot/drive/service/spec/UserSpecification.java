@@ -11,11 +11,29 @@ public class UserSpecification {
     ) {
         return (root, query, builder) -> {
             Predicate isEnabled = builder.equal(root.get("enabled"), enabled);
-
-            query.distinct(true);
             return builder.and(
                     isEnabled
             );
+        };
+    }
+
+    public static Specification<User> findByEnabledAndNameOrEmail(
+            Boolean enabled, String name
+    ) {
+        return (root, query, builder) -> {
+            Predicate isEnabled = builder.equal(root.get("enabled"), enabled);
+            Predicate likeName = builder.like(root.get("name"), "%"+name+"%");
+            Predicate likeEmail = builder.like(root.get("email"), "%"+name+"%");
+            if (name != null && !name.isEmpty()) {
+                return builder.and(
+                        isEnabled,
+                        builder.or(likeName, likeEmail)
+                );
+            } else {
+                return builder.and(
+                        isEnabled
+                );
+            }
         };
     }
 }

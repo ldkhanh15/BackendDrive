@@ -118,11 +118,12 @@ public class OwnershipAspect {
                     "Item does not exist"
             );
         }
-        if (item.getUser().getId() != user.getId() && !user.getRole().getName().equals("ROLE_ADMIN")) {
-            throw new NotOwnerException(
-                    "You cannot access to this item"
-            );
-
+        if (item.getUser().getId() != user.getId()  ) {
+            if(!user.getRole().getName().equals("ROLE_ADMIN")){
+                throw new NotOwnerException(
+                        "You cannot access to this item"
+                );
+            }
         }
 
     }

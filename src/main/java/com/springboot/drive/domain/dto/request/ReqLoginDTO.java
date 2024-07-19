@@ -12,8 +12,6 @@ public class ReqLoginDTO {
     @NotBlank(message = "Password khong duoc de trong")
     private String password;
 
-    @NotBlank(message = "Name khong duoc de trong")
-    private String name;
     public ReqLoginDTO(String email, String password) {
         this.email = email;
         this.password = password;

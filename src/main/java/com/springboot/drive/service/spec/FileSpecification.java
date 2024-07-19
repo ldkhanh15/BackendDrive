@@ -2,11 +2,11 @@ package com.springboot.drive.service.spec;
 
 import com.springboot.drive.domain.modal.AccessItem;
 import com.springboot.drive.domain.modal.File;
+import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.domain.modal.Item;
+import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.constant.AccessEnum;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -77,16 +77,44 @@ public class FileSpecification {
     public static Specification<File> findByParentIdEnabledAndDelete(Long folderId, Boolean enabled,
                                                                       Boolean deleted) {
         return (root, query, builder) -> {
-            Join<File, Item> itemFile = root.join("item");
-            Predicate isFile=builder.equal(itemFile.get("parent").get("itemId"),folderId);
-            Predicate isEnabled = builder.equal(itemFile.get("isEnabled"), enabled);
-            Predicate isDeleted = builder.equal(itemFile.get("isDeleted"), deleted);
+            Predicate isFile=builder.equal(root.get("parent").get("itemId"),folderId);
+            Predicate isEnabled = builder.equal(root.get("isEnabled"), enabled);
+            Predicate isDeleted = builder.equal(root.get("isDeleted"), deleted);
 
             query.distinct(true);
             return builder.and(
                     isDeleted,
                     isEnabled,
                     isFile
+            );
+        };
+    }
+    public static Specification<File> findFilesByFolderRootWithAccess(Folder  parent,
+                                                                      Boolean enabled,String searchQuery) {
+        return (root, query, builder) -> {
+            String currentUserEmail = SecurityUtil.getCurrentUserLogin().isPresent() ?
+                    SecurityUtil.getCurrentUserLogin().get() : "";
+
+            Predicate isEnabled = builder.equal(root.get("isEnabled"), enabled);
+            Predicate parentMatch = builder.equal(root.get("parent"), parent);
+            Predicate publicPredicate = builder.isTrue(root.get("isPublic"));
+
+            // Subquery for access items
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<AccessItem> accessItemRoot = subquery.from(AccessItem.class);
+            subquery.select(accessItemRoot.get("id"));
+            Predicate itemMatch = builder.equal(accessItemRoot.get("item"), root);
+            Predicate userMatch = builder.equal(accessItemRoot.get("user").get("email"), currentUserEmail);
+            subquery.where(builder.and(itemMatch, userMatch));
+
+            Predicate accessPredicate = builder.exists(subquery);
+            Predicate searchPredicate = builder.like(root.get("fileName"), "%" + searchQuery + "%");
+            query.distinct(true);
+            return builder.and(
+                    isEnabled,
+                    parentMatch,
+                    builder.or(publicPredicate, accessPredicate),
+                    searchPredicate
             );
         };
     }

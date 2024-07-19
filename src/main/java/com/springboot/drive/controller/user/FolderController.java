@@ -35,6 +35,7 @@ public class FolderController {
     private final UserService userService;
     private final ActivityService activityService;
     private final ItemService itemService;
+
     public FolderController(
             FolderService folderService,
             UserService userService,
@@ -46,12 +47,13 @@ public class FolderController {
         this.activityService = activityService;
         this.itemService = itemService;
     }
+
     @Async
     protected void logActivity(Folder folder, AccessEnum accessType) {
         Activity activity = new Activity();
-        if(folder.getParent()!=null){
-            Activity parent=activityService.findByItemAndAccessType(folder.getParent(),AccessEnum.CREATE);
-            if(parent!=null){
+        if (folder.getParent() != null) {
+            Activity parent = activityService.findByItemAndAccessType(folder.getParent(), AccessEnum.CREATE);
+            if (parent != null) {
                 activity.setParent(parent);
             }
         }
@@ -60,25 +62,42 @@ public class FolderController {
         activityService.save(activity);
     }
 
-    @GetMapping()
+    @GetMapping("/enabled")
     @FolderOwnerShip(action = AccessEnum.VIEW)
     @ApiMessage(value = "Get folder with access")
-    public ResponseEntity<ResFolderDTO> getAll() throws InValidException {
-        String email=SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
-        User user=userService.findByEmail(email);
-        Folder folder=folderService.findByUserAndParent(user);
-        return ResponseEntity.ok(new ResFolderDTO(folder));
-    }
+    public ResponseEntity<ResFolderDTO> getAll(
 
-    @GetMapping("/trash")
+    ) throws InValidException {
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        User user = userService.findByEmail(email);
+        Folder folder = folderService.findByUserAndParent(user);
+        ResFolderDTO resFolderDTO = new ResFolderDTO(folder);
+        return ResponseEntity.ok(folderService.getFolderDetails(folder.getItemId(), true, false, resFolderDTO));
+    }
+    @GetMapping("/disabled")
     @ApiMessage(value = "Get all folder with paging")
     @FolderOwnerShip(action = AccessEnum.DELETE)
-    public ResponseEntity<ResFolderDTO> getTrash() throws InValidException {
-        String email=SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
-        User user=userService.findByEmail(email);
-        Folder folderRoot=folderService.findByUserAndParent(user);
-        ResFolderDTO resFolderDTO =new ResFolderDTO(folderRoot);
-        return ResponseEntity.ok(folderService.getFolderDetails(folderRoot.getItemId(),false,false,resFolderDTO));
+    public ResponseEntity<ResFolderDTO> getTrash() {
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        User user = userService.findByEmail(email);
+        Folder folderRoot = folderService.findByUserAndParent(user);
+        ResFolderDTO resFolderDTO = new ResFolderDTO(folderRoot);
+        return ResponseEntity.ok(folderService.getFolderDetails(folderRoot.getItemId(), false, false, resFolderDTO));
+    }
+    @GetMapping("/{folderId}")
+    @FolderOwnerShip(action = AccessEnum.VIEW)
+    @ApiMessage(value = "Get folder with access")
+    public ResponseEntity<ResFolderDTO> getAll(
+            @PathVariable("folderId") Long folderId,
+            @RequestParam(required = false) String searchQuery
+    ) throws InValidException {
+        Folder folder = folderService.findFolderByAccess(folderId, true, false);
+        if (folder == null) {
+            throw new InValidException(
+                    "Folder with id " + folderId + " does not exist"
+            );
+        }
+        return ResponseEntity.ok(folderService.getAllFolderRoot(folder, true, false, searchQuery));
     }
 
     @PostMapping
@@ -88,7 +107,7 @@ public class FolderController {
             @Valid @RequestBody ReqFolderDTO folderDTO
     ) throws InValidException {
         Folder parent = folderService.findById(folderDTO.getParent().getId());
-        if (parent == null && folderDTO.getParent().getId() != 0) {
+        if (parent == null) {
             throw new InValidException(
                     "Folder with id " + folderDTO.getParent().getId() + " does not exist"
             );
@@ -104,15 +123,15 @@ public class FolderController {
         }
         Folder folder = new Folder();
         folder.setUser(user);
-        folder.setFolderName(createName(parent,folderDTO.getFolderName()));
+        folder.setFolderName(createName(parent, folderDTO.getFolderName()));
         folder.setIsEnabled(folderDTO.isEnabled());
         folder.setIsPublic(folderDTO.isPublic());
         folder.setParent(parent);
         folder.setItemType(ItemTypeEnum.FOLDER);
         folder.setIsDeleted(false);
-        Folder folderSaved=folderService.save(folder);
+        Folder folderSaved = folderService.save(folder);
 
-        logActivity(folderSaved,AccessEnum.CREATE);
+        logActivity(folderSaved, AccessEnum.CREATE);
 
         return ResponseEntity.ok(new ResFolderDTO(folderSaved));
     }
@@ -130,9 +149,9 @@ public class FolderController {
             );
         }
 
-        folderDB.setFolderName(createName(folderDB.getParent(),folder.getFolderName()));
+        folderDB.setFolderName(createName(folderDB.getParent(), folder.getFolderName()));
         folderDB.setIsPublic(folder.isPublic());
-        logActivity(folderDB,AccessEnum.UPDATE);
+        logActivity(folderDB, AccessEnum.UPDATE);
 
         return ResponseEntity.ok(new ResFolderDTO(folderService.save(folderDB)));
     }
@@ -143,13 +162,13 @@ public class FolderController {
     public ResponseEntity<Void> deleteSoft(
             @PathVariable("id") Long id
     ) throws InValidException {
-        Folder folder = folderService.findByIdAndEnableAndDeleted(id, true,false);
+        Folder folder = folderService.findByIdAndEnableAndDeleted(id, true, false);
         if (folder == null) {
             throw new InValidException(
                     "Folder with id " + id + " does not exist"
             );
         }
-        logActivity(folder,AccessEnum.SOFT_DELETE);
+        logActivity(folder, AccessEnum.SOFT_DELETE);
 
         folderService.deleteSoft(folder);
         return ResponseEntity.ok(null);
@@ -161,13 +180,13 @@ public class FolderController {
     public ResponseEntity<Void> delete(
             @PathVariable("id") Long id
     ) throws InValidException, URISyntaxException {
-        Folder folder = folderService.findByIdAndEnableAndDeleted(id, false,false);
+        Folder folder = folderService.findByIdAndEnableAndDeleted(id, false, false);
         if (folder == null) {
             throw new InValidException(
                     "Folder with id " + id + " does not exist"
             );
         }
-        logActivity(folder,AccessEnum.DELETE);
+        logActivity(folder, AccessEnum.DELETE);
         folderService.delete(folder);
         return ResponseEntity.ok(null);
     }
@@ -178,7 +197,7 @@ public class FolderController {
     public ResponseEntity<ResFolderDTO> restore(
             @PathVariable("id") Long id
     ) throws InValidException {
-        Folder folder = folderService.findByIdAndEnableAndDeleted(id, false,false);
+        Folder folder = folderService.findByIdAndEnableAndDeleted(id, false, false);
         if (folder == null) {
             throw new InValidException(
                     "Folder with id " + id + " does not exist"
@@ -188,8 +207,8 @@ public class FolderController {
         return ResponseEntity.ok(new ResFolderDTO(folderService.restore(folder)));
     }
 
-    private String createName(Folder folder,String name){
-        List<Folder> folders = folderService.findByNameInFolder(folder,name);
+    private String createName(Folder folder, String name) {
+        List<Folder> folders = folderService.findByNameInFolder(folder, name);
 
         int maxNumber = 0;
         for (Folder existingFolder : folders) {
@@ -206,7 +225,7 @@ public class FolderController {
             }
         }
 
-        if(maxNumber==0){
+        if (maxNumber == 0) {
             return name;
         }
         return name + " (" + (maxNumber) + ")";

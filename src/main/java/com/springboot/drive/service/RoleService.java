@@ -82,4 +82,8 @@ public class RoleService {
         }
         return roleRepository.save(roleDB);
     }
+
+    public Role findByName(String roleUser) {
+        return roleRepository.findByName(roleUser);
+    }
 }

@@ -14,7 +14,8 @@ import java.util.List;
 
 public interface FolderRepository extends JpaRepository<Folder,Long>, JpaSpecificationExecutor<Folder> {
     List<Folder> findByFolderNameLikeAndParent(String name, Folder parent);
-    List<Folder> findByUserAndIsEnabledAndParent(User user, boolean isEnabled,Folder parent);
+    List<Folder> findByUserAndIsEnabledAndIsDeletedAndParent(User user, boolean isEnabled,boolean isDeleted,
+                                                             Folder parent);
     List<Folder> findByParentIsNullAndIsEnabled(Specification<Folder> specification, Pageable pageable,
                                                  Boolean enabled);
 

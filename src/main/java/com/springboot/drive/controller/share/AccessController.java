@@ -30,6 +30,7 @@ public class AccessController {
     private final UserService userService;
     private final ItemService itemService;
     private final EmailService emailService;
+
     public AccessController(
             AccessService accessService,
             UserService userService,
@@ -38,9 +39,10 @@ public class AccessController {
     ) {
         this.accessService = accessService;
         this.userService = userService;
-        this.itemService=itemService;
-        this.emailService=emailService;
+        this.itemService = itemService;
+        this.emailService = emailService;
     }
+
     @GetMapping
     @ApiMessage(value = "Get all access of item")
     @ItemOwnerShip
@@ -48,52 +50,52 @@ public class AccessController {
             @RequestParam("itemId") Long itemId,
             Pageable pageable
     ) throws InValidException {
-        Item item=itemService.findById(itemId);
-        if(item==null){
+        Item item = itemService.findById(itemId);
+        if (item == null) {
             throw new InValidException(
-                    "Item with id " + itemId+" does not exist"
+                    "Item with id " + itemId + " does not exist"
             );
         }
 
-        return ResponseEntity.ok(accessService.getAllAccessItemByItem(item,pageable));
+        return ResponseEntity.ok(accessService.getAllAccessItemByItem(item, pageable));
     }
 
     @PostMapping
     @ApiMessage(value = "create access item")
     @ItemOwnerShip
     public ResponseEntity<ResAccessDTO> createAccess(
-        @RequestBody ReqAccessDTO accessDTO
+            @RequestBody ReqAccessDTO accessDTO
     ) throws InValidException {
         User user = userService.findByEmail(accessDTO.getUser().getEmail());
-        if (user == null){
+        if (user == null) {
             throw new InValidException(
-                    "User with email " + accessDTO.getUser().getEmail()+" does not exist"
+                    "User with email " + accessDTO.getUser().getEmail() + " does not exist"
             );
         }
-        String email= SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
-        if(email.equalsIgnoreCase(accessDTO.getUser().getEmail())){
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        if (email.equalsIgnoreCase(accessDTO.getUser().getEmail())) {
             throw new InValidException(
                     "You cannot add permissions for you"
             );
         }
-        Item item=itemService.findById(accessDTO.getItem().getId());
-        if (item == null){
+        Item item = itemService.findById(accessDTO.getItem().getId());
+        if (item == null) {
             throw new InValidException(
-                    "Item with id " + accessDTO.getItem().getId()+" does not exist"
+                    "Item with id " + accessDTO.getItem().getId() + " does not exist"
             );
         }
-        AccessItem accessItem =accessService.findByItemAndUserAndAccessType(item,user,accessDTO.getAccessType());
-        if (accessItem != null){
+        AccessItem accessItem = accessService.findByItemAndUserAndAccessType(item, user, accessDTO.getAccessType());
+        if (accessItem != null) {
             throw new InValidException(
                     "AccessItem already exists"
             );
         }
-        AccessItem acc =new AccessItem();
+        AccessItem acc = new AccessItem();
         acc.setAccessType(accessDTO.getAccessType());
         acc.setUser(user);
         acc.setItem(item);
-        if(accessDTO.getAccessType()!= AccessEnum.VIEW && item instanceof Folder){
-            this.send((Folder) item,user);
+        if (accessDTO.getAccessType() != AccessEnum.VIEW && item instanceof Folder) {
+            this.send((Folder) item, user);
         }
         return ResponseEntity.ok(new ResAccessDTO(accessService.save(acc)));
     }
@@ -102,10 +104,10 @@ public class AccessController {
     @ApiMessage(value = "Delete access item")
     @ItemOwnerShip
     public ResponseEntity<Void> deleteAccess(
-            @PathVariable("id")Long id
+            @PathVariable("id") Long id
     ) throws InValidException {
-        AccessItem accessItem =accessService.findById(id);
-        if(accessItem==null){
+        AccessItem accessItem = accessService.findById(id);
+        if (accessItem == null) {
             throw new InValidException(
                     "Access with id " + id + " does not exist"
             );
@@ -120,22 +122,22 @@ public class AccessController {
     public ResponseEntity<Void> deleteAccessById(
             @RequestBody ReqAccessDTO accessDTO
     ) throws InValidException {
-        User user=userService.findByEmail(accessDTO.getUser().getEmail());
-        if (user==null){
+        User user = userService.findByEmail(accessDTO.getUser().getEmail());
+        if (user == null) {
             throw new InValidException(
-                    "User with email " + accessDTO.getUser().getEmail()+" does not exist"
+                    "User with email " + accessDTO.getUser().getEmail() + " does not exist"
             );
         }
-        Item  item=itemService.findById(accessDTO.getItem().getId());
-        if (item==null){
+        Item item = itemService.findById(accessDTO.getItem().getId());
+        if (item == null) {
             throw new InValidException(
-                    "Item with id " + accessDTO.getItem().getId()+" does not exist"
+                    "Item with id " + accessDTO.getItem().getId() + " does not exist"
             );
         }
-        AccessItem accessItem =accessService.findByItemAndUserAndAccessType(item,user,accessDTO.getAccessType());
-        if(accessItem==null){
+        AccessItem accessItem = accessService.findByItemAndUserAndAccessType(item, user, accessDTO.getAccessType());
+        if (accessItem == null) {
             throw new InValidException(
-                    "Access with email " + user.getEmail()+ " to item "+item.getItemType()+" does not exist"
+                    "Access with email " + user.getEmail() + " to item " + item.getItemType() + " does not exist"
             );
         }
         accessService.delete(accessItem);
@@ -144,11 +146,11 @@ public class AccessController {
 
 
     @Transactional
-    public void send( Folder folder,User user){
-        ResEmailDTO res=new ResEmailDTO(folder,user);
+    public void send(Folder folder, User user) {
+        ResEmailDTO res = new ResEmailDTO(folder, user);
         this.emailService.sendEmailFromTemplate(
                 user.getEmail(),
-                "Folder shared with you: "+folder.getFolderName(),
+                "Folder shared with you: " + folder.getFolderName(),
                 "share",
                 res
         );

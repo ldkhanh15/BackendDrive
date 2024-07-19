@@ -63,10 +63,9 @@ public class FolderService {
     }
 
     public ResultPaginationDTO getAllFolderRoot(Specification<Folder> specification, Pageable pageable,
-                                                   boolean enabled, boolean isDeleted) {
+                                                boolean enabled, boolean isDeleted, String query) {
         Specification<Folder> folderSpec = FolderSpecification.findFolderByParentIsNullAndEnabledAndDeleted(enabled,
-                isDeleted).and(specification);
-
+                isDeleted, query).and(specification);
 
         Page<Folder> folders = folderRepository.findAll(folderSpec, pageable);
         List<ResFolderDTO> result = new ArrayList<>();
@@ -153,11 +152,11 @@ public class FolderService {
         return folderRepository.findByItemIdAndIsEnabled(id, enabled);
     }
 
-    public ResFolderDTO getFolderDetails(Long folderId, boolean enabled, boolean deleted, ResFolderDTO resFolderDTO) throws InValidException {
+    public ResFolderDTO getFolderDetails(Long folderId, boolean enabled, boolean deleted, ResFolderDTO resFolderDTO) {
         Specification<File> specFile = FileSpecification.findByParentIdEnabledAndDelete(folderId, enabled, deleted);
         List<File> files = fileRepository.findAll(specFile);
 
-        Specification<Folder> specFolder=FolderSpecification.findSubFolderAndIsEnabledAndIsDeleted(folderId, enabled,
+        Specification<Folder> specFolder = FolderSpecification.findSubFolderAndIsEnabledAndIsDeleted(folderId, enabled,
                 deleted);
         List<Folder> subFolders = folderRepository.findAll(specFolder);
 
@@ -165,6 +164,37 @@ public class FolderService {
         resFolderDTO.setFiles(files.stream().map(ResFolderDTO.FileFolder::new).collect(Collectors.toList()));
 
         return resFolderDTO;
+    }
+
+    public Folder findFolderByAccess(Long folderId, boolean enabled, boolean deleted) {
+
+        Specification<Folder> folderSpec =
+                FolderSpecification.findFolderByIdAndEnabledAndDeletedWithAccess(folderId, enabled,
+                        deleted);
+
+        return folderRepository.findOne(folderSpec).orElse(null);
+    }
+
+    public ResFolderDTO getAllFolderRoot(Folder parent, boolean enabled, boolean isDeleted, String searchQuery) throws InValidException {
+
+        ResFolderDTO folderDTO = new ResFolderDTO();
+        folderDTO.setFolderRoot(parent);
+        Specification<File> fileSpec = FileSpecification.findFilesByFolderRootWithAccess(parent,
+                enabled, searchQuery);
+        List<File> files = fileRepository.findAll(fileSpec);
+        for (File file : files) {
+            folderDTO.getFiles().add(new ResFolderDTO.FileFolder(file));
+        }
+
+        Specification<Folder> subFolderSpec =
+                FolderSpecification.findFolderByParentAndEnabledAndDeletedWithAccess(parent,
+                        enabled, isDeleted, searchQuery);
+        List<Folder> subFolders = folderRepository.findAll(subFolderSpec);
+        for (Folder subFolder : subFolders) {
+            folderDTO.getSubFolders().add(new ResFolderDTO.SubFolder(subFolder));
+        }
+
+        return folderDTO;
     }
 
     public void delete(Folder folder) throws URISyntaxException {
@@ -195,7 +225,15 @@ public class FolderService {
     }
 
     public Folder findByUserAndParent(User user) {
-        List<Folder> folders = folderRepository.findByUserAndIsEnabledAndParent(user, true, null);
+        List<Folder> folders = folderRepository.findByUserAndIsEnabledAndIsDeletedAndParent(user, true, false, null);
+        if ((folders != null) && (!folders.isEmpty())) {
+            return folders.get(0);
+        }
+        return null;
+    }
+
+    public Folder activeFolderOfUserDeActive(User user) {
+        List<Folder> folders = folderRepository.findByUserAndIsEnabledAndIsDeletedAndParent(user, false, false, null);
         if ((folders != null) && (!folders.isEmpty())) {
             return folders.get(0);
         }
