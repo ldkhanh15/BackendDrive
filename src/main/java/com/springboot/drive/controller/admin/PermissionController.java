@@ -47,45 +47,23 @@ public class PermissionController {
         return ResponseEntity.ok(new ResPermissionDTO(permission));
     }
 
-//    @PostMapping
-//    @ApiMessage(value = "Create new permission")
-//    public ResponseEntity<ResPermissionDTO> create(
-//            @Valid @RequestBody ReqPermissionDTO permissionDTO
-//    ) throws InValidException {
-//        if (permissionService.isPermissionExist(permissionDTO.getModule(),permissionDTO.getMethod(),permissionDTO.getApiPath())) {
-//            throw new InValidException(
-//                    "Permission already exists"
-//            );
-//        }
-//        Permission permission=new Permission();
-//        permission.setName(permissionDTO.getName());
-//        permission.setDescription(permissionDTO.getDescription());
-//        permission.setApiPath(permissionDTO.getApiPath());
-//        permission.setMethod(permission.getMethod());
-//        permission.setModule(permissionDTO.getModule());
-//        return ResponseEntity.ok(new ResPermissionDTO(permissionService.save(permission)));
-//    }
-
     @PostMapping
     @ApiMessage(value = "Create new permission")
     public ResponseEntity<ResPermissionDTO> create(
-            @Valid @RequestBody ReqPermissionDTO[] permissionDTOs
+            @Valid @RequestBody ReqPermissionDTO permissionDTO
     ) throws InValidException {
-       for(ReqPermissionDTO permissionDTO : permissionDTOs){
-           if (permissionService.isPermissionExist(permissionDTO.getModule(),permissionDTO.getMethod(),permissionDTO.getApiPath())) {
-               throw new InValidException(
-                       "Permission already exists"
-               );
-           }
-           Permission permission=new Permission();
-           permission.setName(permissionDTO.getName());
-           permission.setDescription(permissionDTO.getDescription());
-           permission.setApiPath(permissionDTO.getApiPath());
-           permission.setMethod(permissionDTO.getMethod());
-           permission.setModule(permissionDTO.getModule());
-           permissionService.save(permission);
-       }
-        return ResponseEntity.ok(null);
+        if (permissionService.isPermissionExist(permissionDTO.getModule(),permissionDTO.getMethod(),permissionDTO.getApiPath())) {
+            throw new InValidException(
+                    "Permission already exists"
+            );
+        }
+        Permission permission=new Permission();
+        permission.setName(permissionDTO.getName());
+        permission.setDescription(permissionDTO.getDescription());
+        permission.setApiPath(permissionDTO.getApiPath());
+        permission.setMethod(permission.getMethod());
+        permission.setModule(permissionDTO.getModule());
+        return ResponseEntity.ok(new ResPermissionDTO(permissionService.save(permission)));
     }
     @PutMapping
     @ApiMessage(value = "Update a permission")

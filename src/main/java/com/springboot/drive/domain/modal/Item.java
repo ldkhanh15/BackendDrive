@@ -1,5 +1,6 @@
 package com.springboot.drive.domain.modal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.springboot.drive.ulti.SecurityUtil;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
@@ -23,7 +24,7 @@ public abstract class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long itemId;
 
-    @Column(insertable=false, updatable=false)
+    @Column(insertable = false, updatable = false)
     @Enumerated(EnumType.STRING)
     private ItemTypeEnum itemType;
     private Instant createdAt;
@@ -33,33 +34,34 @@ public abstract class Item {
     private Boolean isPublic;
     private Boolean isEnabled;
     private Boolean isDeleted;
+
     @ManyToOne
     @JoinColumn(name = "owner_id")
-    @JsonIgnoreProperties(value ={ "favourites","accessItems","items","role","activity"})
+    @JsonIgnoreProperties(value = {"favourites", "accessItems", "items", "role", "activity"})
     private User user;
 
-    @OneToMany(fetch = FetchType.LAZY,mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties(value = {"item"})
     public List<Activity> activity;
 
-    @OneToMany(fetch = FetchType.LAZY,mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties(value = {"items"})
     private List<Favourite> favourites;
 
-    @OneToMany(fetch = FetchType.LAZY,mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties(value = {"user","item"})
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<AccessItem> accessItems;
 
-
     @PrePersist
-    public void handleBeforeCreate(){
-        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get():"";
-        this.createdAt=Instant.now();
+    public void handleBeforeCreate() {
+        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.createdAt = Instant.now();
     }
 
     @PreUpdate
-    public void handleBeforeUpdate(){
-        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get()
-                :"";
-        this.updatedAt=Instant.now();
+    public void handleBeforeUpdate() {
+        this.updatedBy = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.updatedAt = Instant.now();
     }
 }
+

@@ -1,6 +1,7 @@
 package com.springboot.drive.aop;
 
 import com.springboot.drive.domain.dto.request.ReqAccessDTO;
+import com.springboot.drive.domain.dto.request.ReqFolderDTO;
 import com.springboot.drive.domain.modal.*;
 import com.springboot.drive.service.*;
 import com.springboot.drive.ulti.SecurityUtil;
@@ -13,6 +14,7 @@ import com.springboot.drive.ulti.error.NotOwnerException;
 
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +29,9 @@ public class OwnershipAspect {
     private final AccessService accessService;
     private final FileService fileService;
     private final ItemService itemService;
-
+    
+    @Value("${role.admin}")
+    private String roleAdmin;
     public OwnershipAspect(
             UserService userService,
             FolderService folderService,
@@ -43,7 +47,7 @@ public class OwnershipAspect {
     }
 
     @Before("@annotation(folderOwnerShip) && args(folderId,..)")
-    @Order(1)
+    @Order(2)
     public void checkFolderOwnership(FolderOwnerShip folderOwnerShip, Long folderId) throws InValidException {
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
         User user = userService.findByEmail(email);
@@ -55,7 +59,7 @@ public class OwnershipAspect {
             );
         }
         AccessEnum accessType = folderOwnerShip.action();
-        if (folder.getUser().getId() != user.getId() && !user.getRole().getName().equals("ROLE_ADMIN")) {
+        if (folder.getUser().getId() != user.getId() && !user.getRole().getName().equals(roleAdmin)) {
 
             if (accessType == AccessEnum.VIEW) {
                 if (!folder.getIsPublic()) {
@@ -76,7 +80,7 @@ public class OwnershipAspect {
     }
 
     @Before("@annotation(fileOwnerShip) && args(folderId,fileId,..)")
-    @Order(2)
+    @Order(3)
     public void checkFileOwnership(FileOwnerShip fileOwnerShip, Long folderId, Long fileId) throws InValidException {
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
         User user = userService.findByEmail(email);
@@ -88,7 +92,7 @@ public class OwnershipAspect {
             );
         }
         AccessEnum accessType = fileOwnerShip.action();
-        if (file.getUser().getId() != user.getId() && !user.getRole().getName().equals("ROLE_ADMIN")) {
+        if (file.getUser().getId() != user.getId() && !user.getRole().getName().equals(roleAdmin)) {
             if (accessType == AccessEnum.VIEW) {
                 if (!file.getIsPublic()) {
                     List<AccessItem> accessItem = accessService.findByItemAndUser(file, user);
@@ -118,8 +122,8 @@ public class OwnershipAspect {
                     "Item does not exist"
             );
         }
-        if (item.getUser().getId() != user.getId()  ) {
-            if(!user.getRole().getName().equals("ROLE_ADMIN")){
+        if (item.getUser() != null && item.getUser().getId() != user.getId()) {
+            if (!roleAdmin.equals(user.getRole().getName())) {
                 throw new NotOwnerException(
                         "You cannot access to this item"
                 );

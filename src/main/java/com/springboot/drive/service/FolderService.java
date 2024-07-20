@@ -174,13 +174,11 @@ public class FolderService {
 
         return folderRepository.findOne(folderSpec).orElse(null);
     }
-
     public ResFolderDTO getAllFolderRoot(Folder parent, boolean enabled, boolean isDeleted, String searchQuery) throws InValidException {
-
         ResFolderDTO folderDTO = new ResFolderDTO();
         folderDTO.setFolderRoot(parent);
         Specification<File> fileSpec = FileSpecification.findFilesByFolderRootWithAccess(parent,
-                enabled, searchQuery);
+                enabled,isDeleted, searchQuery);
         List<File> files = fileRepository.findAll(fileSpec);
         for (File file : files) {
             folderDTO.getFiles().add(new ResFolderDTO.FileFolder(file));

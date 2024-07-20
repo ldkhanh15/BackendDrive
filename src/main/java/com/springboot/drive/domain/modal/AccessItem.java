@@ -25,7 +25,7 @@ public class AccessItem {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties(value ={"role","accessItems","favourites","items"} )
+    @JsonIgnoreProperties(value = {"role", "accessItems", "favourites", "items"})
     private User user;
 
     @Enumerated(EnumType.STRING)
@@ -33,24 +33,24 @@ public class AccessItem {
 
     @ManyToOne
     @JoinColumn(name = "item_id")
-    @JsonIgnoreProperties(value = {"user","activity","favourites","parent","subFolders","files"})
+    @JsonIgnoreProperties(value = {"user", "activity", "favourites", "parent", "subFolders", "files"})
     private Item item;
 
     private Instant createdAt;
     private Instant updatedAt;
     private String updatedBy;
     private String createdBy;
+
     @PrePersist
-    public void handleBeforeCreate(){
-        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get():"";
-        this.createdAt=Instant.now();
+    public void handleBeforeCreate() {
+        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.createdAt = Instant.now();
     }
 
     @PreUpdate
-    public void handleBeforeUpdate(){
-        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get()
-                :"";
-        this.updatedAt=Instant.now();
+    public void handleBeforeUpdate() {
+        this.updatedBy = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.updatedAt = Instant.now();
     }
-
 }
+

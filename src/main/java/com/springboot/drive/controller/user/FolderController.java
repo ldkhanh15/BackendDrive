@@ -2,7 +2,6 @@ package com.springboot.drive.controller.user;
 
 import com.springboot.drive.domain.dto.request.ReqFolderDTO;
 import com.springboot.drive.domain.dto.response.ResFolderDTO;
-import com.springboot.drive.domain.dto.response.ResultPaginationDTO;
 import com.springboot.drive.domain.modal.Activity;
 import com.springboot.drive.domain.modal.Folder;
 import com.springboot.drive.domain.modal.User;
@@ -16,10 +15,7 @@ import com.springboot.drive.ulti.anotation.FolderOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
 import com.springboot.drive.ulti.error.InValidException;
-import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
@@ -65,15 +61,14 @@ public class FolderController {
     @GetMapping("/enabled")
     @FolderOwnerShip(action = AccessEnum.VIEW)
     @ApiMessage(value = "Get folder with access")
-    public ResponseEntity<ResFolderDTO> getAll(
-
-    ) throws InValidException {
+    public ResponseEntity<ResFolderDTO> getAll() throws InValidException {
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
         User user = userService.findByEmail(email);
         Folder folder = folderService.findByUserAndParent(user);
         ResFolderDTO resFolderDTO = new ResFolderDTO(folder);
         return ResponseEntity.ok(folderService.getFolderDetails(folder.getItemId(), true, false, resFolderDTO));
     }
+
     @GetMapping("/disabled")
     @ApiMessage(value = "Get all folder with paging")
     @FolderOwnerShip(action = AccessEnum.DELETE)
@@ -84,12 +79,13 @@ public class FolderController {
         ResFolderDTO resFolderDTO = new ResFolderDTO(folderRoot);
         return ResponseEntity.ok(folderService.getFolderDetails(folderRoot.getItemId(), false, false, resFolderDTO));
     }
+
     @GetMapping("/{folderId}")
     @FolderOwnerShip(action = AccessEnum.VIEW)
     @ApiMessage(value = "Get folder with access")
     public ResponseEntity<ResFolderDTO> getAll(
             @PathVariable("folderId") Long folderId,
-            @RequestParam(required = false) String searchQuery
+            @RequestParam("query") String query
     ) throws InValidException {
         Folder folder = folderService.findFolderByAccess(folderId, true, false);
         if (folder == null) {
@@ -97,13 +93,14 @@ public class FolderController {
                     "Folder with id " + folderId + " does not exist"
             );
         }
-        return ResponseEntity.ok(folderService.getAllFolderRoot(folder, true, false, searchQuery));
+        return ResponseEntity.ok(folderService.getAllFolderRoot(folder, true, false, query));
     }
 
-    @PostMapping
+    @PostMapping("/{folderId}")
     @FolderOwnerShip(action = AccessEnum.CREATE)
     @ApiMessage(value = "Create a new folder")
     public ResponseEntity<ResFolderDTO> create(
+            @PathVariable("folderId") Long folderId,
             @Valid @RequestBody ReqFolderDTO folderDTO
     ) throws InValidException {
         Folder parent = folderService.findById(folderDTO.getParent().getId());
@@ -136,10 +133,11 @@ public class FolderController {
         return ResponseEntity.ok(new ResFolderDTO(folderSaved));
     }
 
-    @PutMapping
+    @PutMapping("/{folderId}")
     @ApiMessage(value = "Update a folder")
     @FolderOwnerShip(action = AccessEnum.UPDATE)
     public ResponseEntity<ResFolderDTO> update(
+            @PathVariable("folderId") Long folderId,
             @Valid @RequestBody ReqFolderDTO folder
     ) throws InValidException {
         Folder folderDB = folderService.findById(folder.getId());
@@ -156,11 +154,11 @@ public class FolderController {
         return ResponseEntity.ok(new ResFolderDTO(folderService.save(folderDB)));
     }
 
-    @DeleteMapping("/{id}/soft-delete")
+    @DeleteMapping("/{folderId}/soft-delete")
     @ApiMessage(value = "Soft delete a folder")
     @FolderOwnerShip(action = AccessEnum.SOFT_DELETE)
     public ResponseEntity<Void> deleteSoft(
-            @PathVariable("id") Long id
+            @PathVariable("folderId") Long id
     ) throws InValidException {
         Folder folder = folderService.findByIdAndEnableAndDeleted(id, true, false);
         if (folder == null) {
@@ -174,11 +172,11 @@ public class FolderController {
         return ResponseEntity.ok(null);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{folderId}")
     @ApiMessage(value = "Delete a folder")
     @FolderOwnerShip(action = AccessEnum.DELETE)
     public ResponseEntity<Void> delete(
-            @PathVariable("id") Long id
+            @PathVariable("folderId") Long id
     ) throws InValidException, URISyntaxException {
         Folder folder = folderService.findByIdAndEnableAndDeleted(id, false, false);
         if (folder == null) {
@@ -191,11 +189,11 @@ public class FolderController {
         return ResponseEntity.ok(null);
     }
 
-    @PostMapping("/{id}/restore")
+    @PostMapping("/{folderId}/restore")
     @ApiMessage(value = "Restore a folder")
     @FolderOwnerShip(action = AccessEnum.DELETE)
     public ResponseEntity<ResFolderDTO> restore(
-            @PathVariable("id") Long id
+            @PathVariable("folderId") Long id
     ) throws InValidException {
         Folder folder = folderService.findByIdAndEnableAndDeleted(id, false, false);
         if (folder == null) {

@@ -1,5 +1,6 @@
 package com.springboot.drive.domain.modal;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.springboot.drive.ulti.SecurityUtil;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -36,37 +37,35 @@ public class User {
 
     private double storageQuota;
 
-
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonIgnoreProperties(value = {"user"})
     private List<AccessItem> accessItems;
 
-
-    @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Favourite> favourites;
 
-    @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Item> items;
-
-
 
     private Instant createdAt;
     private Instant updatedAt;
     private String updatedBy;
     private String createdBy;
+
     @PrePersist
-    public void handleBeforeCreate(){
-        this.createdBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get():"";
-        this.createdAt=Instant.now();
+    public void handleBeforeCreate() {
+        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.createdAt = Instant.now();
     }
 
     @PreUpdate
-    public void handleBeforeUpdate(){
-        this.updatedBy= SecurityUtil.getCurrentUserLogin().isPresent()? SecurityUtil.getCurrentUserLogin().get()
-                :"";
-        this.updatedAt=Instant.now();
+    public void handleBeforeUpdate() {
+        this.updatedBy = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.updatedAt = Instant.now();
     }
 }
+

@@ -1,20 +1,21 @@
 package com.springboot.drive.domain.dto.request;
+
 import com.springboot.drive.ulti.anotation.ValidEnum;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class ReqAccessDTO {
-    @NotBlank
+    @NotNull
     @ValidEnum(enumClass = AccessEnum.class, message = "Invalid access type")
     private AccessEnum accessType;
-    @NotBlank
+    @NotNull
     private UserAccess user;
-    @NotBlank
+    @NotNull
     private ItemAccess item;
 
     @Getter
@@ -29,7 +30,5 @@ public class ReqAccessDTO {
     @Setter
     public static class ItemAccess {
         private long id;
-        private ItemTypeEnum itemType;
-
     }
 }

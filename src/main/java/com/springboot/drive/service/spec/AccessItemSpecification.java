@@ -14,12 +14,10 @@ public class AccessItemSpecification {
 
 
     public static Specification<AccessItem> findByItemAndUserAndAccessType(Item item, User user, Boolean enabled,
-                                                                     Boolean deleted, AccessEnum accessType) {
+                                                                           Boolean deleted, AccessEnum accessType) {
         return (root, query, builder) -> {
-            Join<Item, AccessItem> itemJoin=root.join("accessItems", JoinType.LEFT);
-
-            Predicate isEnabled=builder.equal(itemJoin.get("isEnabled"),enabled);
-            Predicate isDeleted=builder.equal(itemJoin.get("isDeleted"),deleted);
+            Predicate isEnabled = builder.equal(root.get("item").get("isEnabled"), enabled);
+            Predicate isDeleted = builder.equal(root.get("item").get("isDeleted"), deleted);
             Predicate itemPredicate = builder.equal(root.get("item"), item);
             Predicate userPredicate = builder.equal(root.get("user"), user);
             Predicate accessTypePredicate = builder.or(

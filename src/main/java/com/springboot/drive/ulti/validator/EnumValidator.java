@@ -4,28 +4,27 @@ import com.springboot.drive.ulti.anotation.ValidEnum;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import java.util.Arrays;
+public class EnumValidator implements ConstraintValidator<ValidEnum, Enum<?>> {
 
-public class EnumValidator implements ConstraintValidator<ValidEnum, String> {
-    private Class<? extends Enum<?>> enumClass;
+    private ValidEnum annotation;
 
     @Override
     public void initialize(ValidEnum constraintAnnotation) {
-        this.enumClass = constraintAnnotation.enumClass();
+        this.annotation = constraintAnnotation;
     }
 
     @Override
-    public boolean isValid(String value, ConstraintValidatorContext context) {
+    public boolean isValid(Enum<?> value, ConstraintValidatorContext context) {
         if (value == null) {
-            return true;
+            return false; // Consider null invalid, adjust as necessary
         }
-        Object[] enumValues = this.enumClass.getEnumConstants();
-        for (Object enumValue : enumValues) {
-            if (value.equals(enumValue.toString())) {
+
+        // Check if value is valid enum constant
+        for (Enum<?> enumConstant : annotation.enumClass().getEnumConstants()) {
+            if (enumConstant.equals(value)) {
                 return true;
             }
         }
         return false;
     }
 }
-

@@ -89,17 +89,17 @@ public class FileSpecification {
             );
         };
     }
-    public static Specification<File> findFilesByFolderRootWithAccess(Folder  parent,
-                                                                      Boolean enabled,String searchQuery) {
+    public static Specification<File> findFilesByFolderRootWithAccess(Folder  parent,Boolean enabled,Boolean deleted,
+                                                                      String searchQuery) {
         return (root, query, builder) -> {
             String currentUserEmail = SecurityUtil.getCurrentUserLogin().isPresent() ?
                     SecurityUtil.getCurrentUserLogin().get() : "";
 
+            Predicate isDeleted=builder.equal(root.get("isDeleted"),deleted);
             Predicate isEnabled = builder.equal(root.get("isEnabled"), enabled);
             Predicate parentMatch = builder.equal(root.get("parent"), parent);
             Predicate publicPredicate = builder.isTrue(root.get("isPublic"));
-
-            // Subquery for access items
+            Predicate ownerPredicate = builder.equal(root.get("user").get("email"), currentUserEmail);
             Subquery<Long> subquery = query.subquery(Long.class);
             Root<AccessItem> accessItemRoot = subquery.from(AccessItem.class);
             subquery.select(accessItemRoot.get("id"));
@@ -110,12 +110,24 @@ public class FileSpecification {
             Predicate accessPredicate = builder.exists(subquery);
             Predicate searchPredicate = builder.like(root.get("fileName"), "%" + searchQuery + "%");
             query.distinct(true);
-            return builder.and(
-                    isEnabled,
-                    parentMatch,
-                    builder.or(publicPredicate, accessPredicate),
-                    searchPredicate
-            );
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                return builder.and(
+                        isEnabled,
+                        parentMatch,
+                        builder.or(publicPredicate, accessPredicate,ownerPredicate),
+                        searchPredicate,
+                        isDeleted
+                );
+            } else {
+                return builder.and(
+                        isEnabled,
+                        parentMatch,
+                        builder.or(publicPredicate, accessPredicate,ownerPredicate),
+                        isDeleted
+                );
+            }
+
+
         };
     }
 }

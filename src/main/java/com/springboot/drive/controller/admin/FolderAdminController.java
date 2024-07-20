@@ -9,6 +9,7 @@ import com.springboot.drive.service.FolderService;
 import com.springboot.drive.service.ItemService;
 import com.springboot.drive.service.UserService;
 import com.springboot.drive.ulti.anotation.ApiMessage;
+import com.springboot.drive.ulti.anotation.FolderOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.constant.ItemTypeEnum;
 import com.springboot.drive.ulti.error.InValidException;
@@ -135,9 +136,11 @@ public class FolderAdminController {
     }
 
 
-    @PostMapping
+    @PostMapping("/{folderId}")
     @ApiMessage(value = "Create a new folder")
+    @FolderOwnerShip(action = AccessEnum.CREATE)
     public ResponseEntity<ResFolderDTO> create(
+            @PathVariable("folderId")Long folderId,
             @Valid @RequestBody ReqFolderDTO folderDTO
     ) throws InValidException {
         Folder parent = folderService.findById(folderDTO.getParent().getId());
@@ -159,9 +162,11 @@ public class FolderAdminController {
         return ResponseEntity.ok(new ResFolderDTO(folderSaved));
     }
 
-    @PutMapping
+    @PutMapping("/{folderId}")
     @ApiMessage(value = "Update a folder")
+    @FolderOwnerShip(action = AccessEnum.UPDATE)
     public ResponseEntity<ResFolderDTO> update(
+            @PathVariable("folderId") Long folderId,
             @Valid @RequestBody ReqFolderDTO folder
     ) throws InValidException {
         Folder folderDB = folderService.findById(folder.getId());

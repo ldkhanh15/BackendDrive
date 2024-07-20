@@ -94,7 +94,7 @@ public class FileAdminController {
                     "Folder with id " + folderId + " does not exist"
             );
         }
-        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder.getItemId(), true,false));
+        return ResponseEntity.ok(fileService.getAll(specification, pageable, folder.getItemId(), true, false));
     }
 
     @GetMapping("/disabled")
@@ -110,8 +110,9 @@ public class FileAdminController {
                     "Folder with id " + folderId + " does not exist"
             );
         }
-        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder.getItemId(), false,false));
+        return ResponseEntity.ok(fileService.getAll(specification, pageable, folder.getItemId(), false, false));
     }
+
     @GetMapping("/deleted")
     @ApiMessage(value = "Get all deleted files")
     public ResponseEntity<ResultPaginationDTO> getAllDeleted(
@@ -125,7 +126,7 @@ public class FileAdminController {
                     "Folder with id " + folderId + " does not exist"
             );
         }
-        return ResponseEntity.ok(fileService.getAll(specification,pageable,folder.getItemId(), false,true));
+        return ResponseEntity.ok(fileService.getAll(specification, pageable, folder.getItemId(), false, true));
     }
 
     @PostMapping
@@ -134,7 +135,7 @@ public class FileAdminController {
             @PathVariable("folderId") Long folderId,
             @RequestParam(value = "file", required = false) MultipartFile file
     ) throws InValidException, StorageException, URISyntaxException, IOException {
-        Folder folder = folderService.findByIdAndEnabled(folderId,true);
+        Folder folder = folderService.findByIdAndEnabled(folderId, true);
         if (folder == null) {
             throw new InValidException(
                     "Folder with id " + folderId + " does not exist"
@@ -157,18 +158,20 @@ public class FileAdminController {
         String fileStorage = uploadService.store(file, fileFolder);
         String email = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get() : "";
         User user = userService.findByEmail(email);
-        if(user.getStorageQuota()+file.getSize()>storageLimit){
+        if (user.getStorageQuota() + file.getSize() > storageLimit) {
             throw new InValidException(
                     "You cannot upload more 15GB"
             );
         }
+        user.setStorageQuota(user.getStorageQuota()+file.getSize());
+        userService.save(user);
         File fileDB = new File();
         fileDB.setIsEnabled(true);
         fileDB.setIsPublic(true);
         fileDB.setIsDeleted(false);
         fileDB.setFilePath(fileStorage);
         fileDB.setFileSize(file.getSize());
-        fileDB.setFileName(createName(folder,fileName));
+        fileDB.setFileName(createName(folder, fileName));
         fileDB.setFileType(file.getContentType());
         fileDB.setUser(user);
         fileDB.setParent(folder);
@@ -184,20 +187,21 @@ public class FileAdminController {
         return ResponseEntity.ok().body(res);
     }
 
-    @PutMapping
+    @PutMapping("/{fileId}")
     @ApiMessage(value = "Rename a file")
     public ResponseEntity<ResFileDTO> rename(
-            @PathVariable("folderId")Long folderId,
+            @PathVariable("folderId") Long folderId,
+            @PathVariable("fileId") Long fileId,
             @RequestBody ReqFileDTO file
     ) throws InValidException {
-        Folder folderDB=folderService.findByIdAndEnabled(folderId,true);
-        File fileDB = fileService.findByIdAndEnabled(file.getId(), true);
+        Folder folderDB = folderService.findByIdAndEnabled(folderId, true);
+        File fileDB = fileService.findByIdAndEnabled(fileId, true);
         if (fileDB == null) {
             throw new InValidException(
-                    "File with id " + file.getId() + " does not exist"
+                    "File with id " + fileId + " does not exist"
             );
         }
-        fileDB.setFileName(createName(folderDB,file.getFileName()));
+        fileDB.setFileName(createName(folderDB, file.getFileName()));
         fileDB.setIsPublic(file.isPublic());
 
         logActivity(fileDB, AccessEnum.UPDATE);
@@ -207,10 +211,10 @@ public class FileAdminController {
     @DeleteMapping("/{id}/soft-delete")
     @ApiMessage(value = "Soft delete a file")
     public ResponseEntity<Void> softDelete(
-            @PathVariable("folderId")Long folderId,
+            @PathVariable("folderId") Long folderId,
             @PathVariable("id") Long id
     ) throws InValidException {
-        File fileDB = fileService.findByIdAndEnabledAndDeleted(id, true,false);
+        File fileDB = fileService.findByIdAndEnabledAndDeleted(id, true, false);
         if (fileDB == null) {
             throw new InValidException(
                     "File with id " + id + " does not exist"
@@ -224,10 +228,10 @@ public class FileAdminController {
     @DeleteMapping("/{id}")
     @ApiMessage(value = "Delete a file")
     public ResponseEntity<Void> delete(
-            @PathVariable("folderId")Long folderId,
+            @PathVariable("folderId") Long folderId,
             @PathVariable Long id
     ) throws InValidException, URISyntaxException {
-        File fileDB = fileService.findByIdAndEnabledAndDeleted(id, false,false);
+        File fileDB = fileService.findByIdAndEnabledAndDeleted(id, false, false);
         if (fileDB == null) {
             throw new InValidException(
                     "File with id " + id + " does not exist"
@@ -238,7 +242,10 @@ public class FileAdminController {
                     "File name " + fileDB.getFilePath() + " does not exist in " + fileFolder
             );
         }
-
+        String email=SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
+        User user=userService.findByEmailAndEnabled(email, true);
+        user.setStorageQuota(user.getStorageQuota()-fileDB.getFileSize());
+        userService.save(user);
         fileService.delete(fileDB);
 
         logActivity(fileDB, AccessEnum.DELETE);
@@ -248,28 +255,31 @@ public class FileAdminController {
     @PostMapping("/{id}/restore")
     @ApiMessage(value = "Restore a file")
     public ResponseEntity<ResFileDTO> restore(
-            @PathVariable("folderId")Long folderId,
+            @PathVariable("folderId") Long folderId,
             @PathVariable("id") long id
     ) throws InValidException {
-        File file = fileService.findByIdAndEnabledAndDeleted(id, false,false);
+        File file = fileService.findByIdAndEnabledAndDeleted(id, false, false);
         if (file == null) {
             throw new InValidException(
                     "File with id " + id + " does not exist"
             );
         }
-
+        String email=SecurityUtil.getCurrentUserLogin().isPresent()?SecurityUtil.getCurrentUserLogin().get() : "";
+        User user=userService.findByEmailAndEnabled(email, true);
+        user.setStorageQuota(user.getStorageQuota()+file.getFileSize());
+        userService.save(user);
         return ResponseEntity.ok(new ResFileDTO(fileService.restore(file)));
     }
 
     @PostMapping("/{id}/download")
     @ApiMessage(value = "Download file")
     public ResponseEntity<Resource> download(
-            @PathVariable("folderId")Long folderId,
+            @PathVariable("folderId") Long folderId,
             @PathVariable("id") Long id
     ) throws StorageException, URISyntaxException, FileNotFoundException, InValidException {
 
         File file = fileService.findById(id);
-        if(file == null) {
+        if (file == null) {
             throw new InValidException(
                     "File with id " + id + " does not exist"
             );
@@ -284,12 +294,13 @@ public class FileAdminController {
         InputStreamResource resource = uploadService.getResource(file.getFilePath(), fileFolder);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\""+file.getFilePath()+"\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilePath() + "\"")
                 .contentLength(uploadService.getFileLength(file.getFilePath(), fileFolder))
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
 
     }
+
     @PostMapping("/multipart")
     @ApiMessage("Upload multiple files")
     @FolderOwnerShip(action = AccessEnum.CREATE)
@@ -334,7 +345,7 @@ public class FileAdminController {
                         fileDB.setIsDeleted(false);
                         fileDB.setFilePath(fileStorage);
                         fileDB.setFileSize(file.getSize());
-                        fileDB.setFileName(createName(folder,fileName));
+                        fileDB.setFileName(createName(folder, fileName));
                         fileDB.setFileType(file.getContentType());
                         fileDB.setUser(user);
                         fileDB.setParent(folder);
@@ -355,8 +366,9 @@ public class FileAdminController {
 
         return ResponseEntity.ok().body(uploadedFiles);
     }
-    private String createName(Folder folder,String name){
-        List<File> files = fileService.findByNameInFolder(folder,name);
+
+    private String createName(Folder folder, String name) {
+        List<File> files = fileService.findByNameInFolder(folder, name);
 
         int maxNumber = 0;
         for (File existingFolder : files) {
@@ -373,9 +385,9 @@ public class FileAdminController {
             }
         }
 
-       if(maxNumber==0){
-           return name;
-       }
+        if (maxNumber == 0) {
+            return name;
+        }
         return name + " (" + (maxNumber) + ")";
     }
 }

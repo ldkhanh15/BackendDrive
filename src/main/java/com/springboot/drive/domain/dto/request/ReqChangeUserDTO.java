@@ -6,8 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ReqFileDTO {
+public class ReqChangeUserDTO {
     @NotBlank
-    private String fileName;
-    private boolean isPublic;
+    private String name;
 }

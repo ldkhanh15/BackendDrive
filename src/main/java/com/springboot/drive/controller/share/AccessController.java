@@ -17,6 +17,7 @@ import com.springboot.drive.ulti.anotation.ApiMessage;
 import com.springboot.drive.ulti.anotation.ItemOwnerShip;
 import com.springboot.drive.ulti.constant.AccessEnum;
 import com.springboot.drive.ulti.error.InValidException;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +65,7 @@ public class AccessController {
     @ApiMessage(value = "create access item")
     @ItemOwnerShip
     public ResponseEntity<ResAccessDTO> createAccess(
-            @RequestBody ReqAccessDTO accessDTO
+           @Valid @RequestBody ReqAccessDTO accessDTO
     ) throws InValidException {
         User user = userService.findByEmail(accessDTO.getUser().getEmail());
         if (user == null) {

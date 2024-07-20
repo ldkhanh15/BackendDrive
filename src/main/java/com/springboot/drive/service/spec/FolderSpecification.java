@@ -73,7 +73,6 @@ public class FolderSpecification {
             System.out.println(currentUserEmail);
 
 
-            // Subquery for access items
             Subquery<Long> subquery = query.subquery(Long.class);
             Root<AccessItem> accessItemRoot = subquery.from(AccessItem.class);
             subquery.select(accessItemRoot.get("id"));
@@ -84,13 +83,24 @@ public class FolderSpecification {
             Predicate accessPredicate = builder.exists(subquery);
             Predicate searchPredicate = builder.like(root.get("folderName"), "%" + searchQuery + "%");
             query.distinct(true);
-            return builder.and(
-                    isDeleted,
-                    isEnabled,
-                    isFolder,
-                    builder.or(ownerPredicate, publicPredicate, accessPredicate),
-                    searchPredicate
-            );
+
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                return builder.and(
+                        isDeleted,
+                        isEnabled,
+                        isFolder,
+                        builder.or(ownerPredicate, publicPredicate, accessPredicate),
+                        searchPredicate
+                );
+            } else {
+                return builder.and(
+                        isDeleted,
+                        isEnabled,
+                        isFolder,
+                        builder.or(ownerPredicate, publicPredicate, accessPredicate)
+                );
+            }
+
         };
     }
 
